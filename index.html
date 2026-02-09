@@ -1,0 +1,6128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AIAudit - Know Where Your Time Goes</title>
+<style>
+:root {
+    --accent: #007aff;
+    --work: #e8eef4;
+    --meeting: #eaeaea;
+    --ai: #ede8f5;
+    --personal: #e5f2f0;
+    --health: #fce8e8;
+    --work-dot: #5a9fd4;
+    --meeting-dot: #8e8e93;
+    --ai-dot: #9b8bb8;
+    --personal-dot: #5fb8a0;
+    --health-dot: #e85d5d;
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text2: #86868b;
+    --border: #e5e5ea;
+    --success: #34c759;
+    --warning: #ff9500;
+    --danger: #ff3b30;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════
+   APP SHELL
+   ══════════════════════════════════════ */
+.app {
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+}
+
+/* Header */
+.header {
+    padding: 16px 20px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.header-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+}
+.header-subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 2px;
+}
+
+/* Main Content */
+.main {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 100px;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    padding: 16px;
+}
+.tab-content.active {
+    display: block;
+}
+
+/* Bottom Nav */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 1000;
+}
+.nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    transition: color 0.2s;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.nav-item.active {
+    color: var(--accent);
+}
+.nav-icon {
+    font-size: 24px;
+    margin-bottom: 2px;
+}
+
+/* ══════════════════════════════════════
+   TASKS TAB
+   ══════════════════════════════════════ */
+.tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.tasks-title {
+    font-size: 20px;
+    font-weight: 600;
+}
+.add-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+}
+.add-btn:active {
+    transform: scale(0.95);
+    background: #0066d6;
+}
+
+/* Task List */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.task-item {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.task-item:active {
+    transform: scale(0.98);
+}
+.task-item.scheduled {
+    opacity: 0.6;
+}
+.task-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.task-dot.work { background: var(--work-dot); }
+.task-dot.meeting { background: var(--meeting-dot); }
+.task-dot.ai { background: var(--ai-dot); }
+.task-dot.personal { background: var(--personal-dot); }
+.task-dot.health { background: var(--health-dot); }
+
+/* Priority Badge */
+.priority-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+.priority-badge.high {
+    background: rgba(255,59,48,0.15);
+    color: #ff3b30;
+}
+.priority-badge.medium {
+    background: rgba(255,149,0,0.15);
+    color: #ff9500;
+}
+.priority-badge.low {
+    background: rgba(52,199,89,0.15);
+    color: #34c759;
+}
+
+/* Priority Picker */
+.priority-picker {
+    display: flex;
+    gap: 8px;
+}
+.priority-option {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    transition: all 0.2s;
+}
+.priority-option:active {
+    transform: scale(0.96);
+}
+.priority-option.selected {
+    border-color: currentColor;
+}
+.priority-option.high {
+    color: #ff3b30;
+}
+.priority-option.high.selected {
+    background: rgba(255,59,48,0.1);
+}
+.priority-option.medium {
+    color: #ff9500;
+}
+.priority-option.medium.selected {
+    background: rgba(255,149,0,0.1);
+}
+.priority-option.low {
+    color: #34c759;
+}
+.priority-option.low.selected {
+    background: rgba(52,199,89,0.1);
+}
+.priority-option-icon {
+    font-size: 20px;
+}
+.priority-option-label {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Due Date Picker */
+.due-date-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.due-date-input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+}
+.due-date-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.due-date-shortcuts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.due-shortcut {
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 16px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+}
+.due-shortcut:active {
+    background: rgba(0,122,255,0.1);
+    color: var(--accent);
+}
+.form-label-hint {
+    font-weight: 400;
+    color: var(--text2);
+}
+
+/* Routine Picker */
+.routine-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+}
+.routine-toggle-switch {
+    width: 44px;
+    height: 26px;
+    background: var(--border);
+    border-radius: 13px;
+    position: relative;
+    transition: background 0.2s;
+}
+.routine-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.routine-toggle.active .routine-toggle-switch {
+    background: var(--accent);
+}
+.routine-toggle.active .routine-toggle-switch::after {
+    transform: translateX(18px);
+}
+.routine-settings {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0,122,255,0.05);
+    border-radius: 8px;
+}
+.routine-row {
+    margin-bottom: 12px;
+}
+.routine-row:last-child {
+    margin-bottom: 0;
+}
+.routine-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+}
+.routine-day-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.routine-day {
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+}
+.routine-day.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+.routine-time-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Routine Badge in Task List */
+.task-routine {
+    font-size: 10px;
+    color: var(--accent);
+    margin-left: 6px;
+}
+
+/* Due Date Badge in Task List */
+.task-due {
+    font-size: 11px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.task-due.overdue {
+    color: var(--danger);
+}
+.task-due.today {
+    color: var(--accent);
+}
+.task-due.soon {
+    color: var(--warning);
+}
+
+.task-info {
+    flex: 1;
+    min-width: 0;
+}
+.task-name {
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.task-meta {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+}
+.task-dur {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    padding: 4px 10px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 6px;
+}
+.task-arrow {
+    color: var(--text2);
+    font-size: 18px;
+}
+
+/* Low Priority Collapsible */
+.low-priority-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: rgba(52,199,89,0.08);
+    border-radius: 12px;
+    margin-top: 8px;
+    cursor: pointer;
+    gap: 8px;
+}
+.low-priority-header:active {
+    background: rgba(52,199,89,0.15);
+}
+.low-priority-dot {
+    width: 10px;
+    height: 10px;
+    background: #34c759;
+    border-radius: 50%;
+}
+.low-priority-label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+}
+.low-priority-dur {
+    font-size: 13px;
+    color: var(--text2);
+    margin-right: 4px;
+}
+.low-priority-arrow {
+    font-size: 10px;
+    color: var(--text2);
+}
+.low-priority-tasks {
+    margin-top: 4px;
+}
+.low-priority-tasks .task-item {
+    background: rgba(52,199,89,0.04);
+}
+
+/* Inline Subtasks (expandable in task list) */
+.task-expand {
+    color: var(--text2);
+    font-size: 10px;
+    padding: 8px;
+    margin: -8px;
+    cursor: pointer;
+}
+.task-expand.expanded {
+    color: var(--accent);
+}
+.task-item.has-subtasks-open {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+}
+.inline-subtasks {
+    background: rgba(0,122,255,0.04);
+    border-radius: 0 0 12px 12px;
+    margin-bottom: 8px;
+    padding: 4px 0;
+    border-top: 1px solid rgba(0,122,255,0.1);
+}
+.inline-subtask {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px 10px 36px;
+    gap: 10px;
+    cursor: pointer;
+}
+.inline-subtask:active {
+    background: rgba(0,122,255,0.08);
+}
+.inline-subtask.done {
+    opacity: 0.5;
+}
+.inline-subtask.done .inline-subtask-name {
+    text-decoration: line-through;
+}
+.inline-subtask-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+.inline-subtask.done .inline-subtask-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+.inline-subtask-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text);
+}
+.inline-subtask-dur {
+    font-size: 12px;
+    color: var(--text2);
+}
+
+/* Subtasks */
+.task-subtask-badge {
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(0,122,255,0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 8px;
+}
+.subtask-list {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.subtask-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    gap: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.subtask-item:last-child {
+    border-bottom: none;
+}
+.subtask-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.subtask-item.done .subtask-check {
+    background: var(--success);
+    border-color: var(--success);
+}
+.subtask-item.scheduled .subtask-name {
+    color: var(--success);
+}
+.subtask-name {
+    flex: 1;
+    font-size: 14px;
+    cursor: pointer;
+}
+.subtask-item.done .subtask-name {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+.subtask-dur {
+    font-size: 12px;
+    color: var(--text2);
+}
+.subtask-del {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 16px;
+}
+.subtask-edit {
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0.5;
+    padding: 4px;
+}
+.subtask-edit:hover {
+    opacity: 1;
+}
+.subtask-name {
+    cursor: pointer;
+}
+.subtask-name:hover, .subtask-dur:hover {
+    color: var(--accent);
+}
+
+.edit-subtask-modal {
+    max-width: 320px;
+}
+.confirm-btn.primary {
+    background: var(--accent);
+    color: white;
+}
+.subtask-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+}
+.subtask-select-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.subtask-select-item:active {
+    transform: scale(0.98);
+}
+.subtask-select-item.selected {
+    background: var(--accent);
+    color: white;
+}
+.subtask-select-item.done {
+    opacity: 0.4;
+    pointer-events: none;
+}
+.subtask-select-icon {
+    margin-right: 10px;
+}
+.subtask-select-name {
+    flex: 1;
+    font-size: 14px;
+}
+.subtask-select-dur {
+    font-size: 12px;
+    opacity: 0.7;
+}
+.subtask-select-item.parent {
+    background: rgba(0,122,255,0.1);
+    font-weight: 600;
+}
+.subtask-select-item.parent.selected {
+    background: var(--accent);
+}
+
+/* Add Subtask Input */
+.add-subtask-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+.add-subtask-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.add-subtask-dur {
+    width: 80px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+.add-subtask-dur[type="number"] {
+    width: 70px;
+    -moz-appearance: textfield;
+}
+.add-subtask-dur[type="number"]::-webkit-outer-spin-button,
+.add-subtask-dur[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.add-subtask-btn {
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Task Summary */
+.tasks-summary {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--card);
+    border-radius: 12px;
+}
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--text2);
+}
+.summary-row + .summary-row {
+    margin-top: 8px;
+}
+.summary-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+}
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+.empty-text {
+    font-size: 15px;
+}
+
+/* ══════════════════════════════════════
+   TODAY TAB (Calendar)
+   ══════════════════════════════════════ */
+.today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.today-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.today-nav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.today-date {
+    font-size: 17px;
+    font-weight: 600;
+}
+.today-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.today-import-btn {
+    font-size: 16px;
+    background: rgba(0,122,255,0.1);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+.today-now-btn {
+    font-size: 13px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Time Grid */
+.time-grid {
+    background: var(--card);
+    border-radius: 16px;
+    overflow: visible;
+    position: relative;
+}
+.time-slot {
+    display: flex;
+    min-height: 60px;
+    position: relative;
+    overflow: visible;
+}
+.time-label {
+    width: 50px;
+    font-size: 11px;
+    color: var(--text2);
+    text-align: right;
+    flex-shrink: 0;
+    padding-right: 8px;
+    position: relative;
+    top: -8px;
+}
+.time-slot:first-child .time-label {
+    top: 4px;
+}
+.time-content {
+    flex: 1;
+    padding: 4px 8px 4px 0;
+    position: relative;
+    min-height: 60px;
+    border-left: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    overflow: visible;
+}
+.time-slot:first-child .time-content {
+    border-top: none;
+}
+.time-slot.lunch .time-content {
+    background: rgba(0,0,0,0.03);
+}
+.time-slot.lunch .time-label {
+    color: var(--text2);
+}
+
+/* Events */
+.event {
+    position: absolute;
+    left: 0;
+    right: 8px;
+    background: var(--work);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #333;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* Event Action Button */
+.event-action {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    transition: transform 0.15s, background 0.15s;
+}
+.event-action.play {
+    background: rgba(0,0,0,0.15);
+    color: #333;
+}
+.event-action.play:active {
+    transform: scale(0.9);
+    background: rgba(0,0,0,0.25);
+}
+.event-action.timing {
+    background: #007aff;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+.event-action.done {
+    background: rgba(0,0,0,0.1);
+    color: #666;
+    font-size: 12px;
+}
+.event-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.event:active {
+    transform: scale(0.98);
+}
+.event.work { background: var(--work); }
+.event.meeting { background: var(--meeting); }
+.event.ai { background: var(--ai); }
+.event.personal { background: var(--personal); }
+.event.health { background: var(--health); }
+.event.completed {
+    opacity: 0.5;
+}
+.event.timer-running {
+    box-shadow: 0 0 0 2px rgba(255,149,0,0.5);
+    animation: eventPulse 2s ease-in-out infinite;
+}
+@keyframes eventPulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(255,149,0,0.5); }
+    50% { box-shadow: 0 0 0 4px rgba(255,149,0,0.3); }
+}
+.event-tracking.timer-active {
+    color: #fff;
+    font-weight: 600;
+}
+.event.routine-preview {
+    background: transparent !important;
+    border: 2px dashed var(--text2);
+    opacity: 0.6;
+}
+.event.routine-preview.work { border-color: var(--work); }
+.event.routine-preview.meeting { border-color: var(--meeting); }
+.event.routine-preview.ai { border-color: var(--ai); }
+.event.routine-preview.personal { border-color: var(--personal); }
+.event.routine-preview .event-name,
+.event.routine-preview .event-time,
+.event.routine-preview .event-tracking {
+    color: var(--text);
+}
+.event.routine-preview .event-meta {
+    background: rgba(0,0,0,0.08);
+}
+.event-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+.event-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(0,0,0,0.15);
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+.event-time {
+    font-size: 10px;
+    opacity: 0.95;
+    white-space: nowrap;
+}
+.event-tracking {
+    font-size: 9px;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+.event-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+/* Current Time Indicator */
+.now-line {
+    position: absolute;
+    left: 51px;
+    right: 0;
+    height: 2px;
+    background: var(--danger);
+    z-index: 100;
+    pointer-events: none;
+}
+.now-line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+}
+
+/* Drop Zone Hint */
+.time-content.drag-over {
+    background: rgba(0,122,255,0.1);
+}
+
+/* ══════════════════════════════════════
+   STATS TAB
+   ══════════════════════════════════════ */
+.stats-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.stats-card-title {
+    font-size: 13px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+/* Category Time Chart */
+.category-time-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.category-time-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.category-time-label {
+    width: 70px;
+    font-size: 13px;
+    color: var(--text2);
+}
+.category-time-bar-bg {
+    flex: 1;
+    height: 24px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.category-time-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    min-width: fit-content;
+}
+.category-time-bar.work { background: var(--work-dot); }
+.category-time-bar.meeting { background: var(--meeting-dot); }
+.category-time-bar.ai { background: var(--ai-dot); }
+.category-time-bar.personal { background: var(--personal-dot); }
+.category-time-bar.health { background: var(--health-dot); }
+.category-time-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
+
+/* Time Tracked Meter */
+.time-tracked-meter {
+    text-align: center;
+    padding: 20px 0;
+}
+.time-tracked-value {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--text);
+}
+.time-tracked-value span {
+    font-size: 28px;
+    color: var(--text2);
+}
+.time-tracked-label {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 4px;
+}
+.time-tracked-hint {
+    font-size: 13px;
+    color: var(--accent);
+    margin-top: 12px;
+}
+
+/* AI Hero Section */
+.ai-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+.ai-hero .stats-card-title {
+    color: rgba(255,255,255,0.9);
+}
+.ai-hero-content {
+    padding: 8px 0;
+}
+.ai-hero-title {
+    font-size: 13px;
+    opacity: 0.85;
+    margin-bottom: 12px;
+}
+.ai-hero-summary {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 16px;
+}
+.ai-hero-stat-large {
+    text-align: center;
+}
+.ai-hero-stat-large .ai-hero-stat-value {
+    font-size: 36px;
+    font-weight: 700;
+}
+.ai-hero-stat-large .ai-hero-stat-label {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+.ai-hero-hint {
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 16px;
+}
+.ai-hero-empty {
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.8;
+    padding: 20px 0;
+}
+/* Repeated Tasks Tracking */
+.ai-repeated-tasks {
+    margin-bottom: 12px;
+}
+.ai-task-row {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.ai-task-row:last-child {
+    border-bottom: none;
+}
+.ai-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.ai-task-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+.ai-task-count {
+    font-size: 11px;
+    opacity: 0.7;
+    background: rgba(255,255,255,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.ai-task-progress {
+    margin-bottom: 4px;
+}
+.ai-task-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.ai-task-fill {
+    height: 100%;
+    background: #fbbf24;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.ai-task-fill.improved {
+    background: #4ade80;
+}
+.ai-task-times {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+.ai-task-diff {
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+    margin-left: auto;
+}
+.ai-task-diff.faster {
+    background: rgba(74, 222, 128, 0.3);
+    color: #4ade80;
+}
+.ai-task-diff.slower {
+    background: rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+}
+.ai-task-methods {
+    font-size: 11px;
+    opacity: 0.6;
+}
+/* Ratio Section */
+.ai-ratio-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+}
+.ai-ratio-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.ai-ratio-fill {
+    height: 100%;
+    background: #4ade80;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+.ai-ratio-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 6px;
+}
+
+/* Insights Card */
+.insights-card {
+    border-left: 4px solid var(--accent);
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+.stat-item {
+    background: rgba(0,0,0,0.02);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+}
+.stat-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 4px;
+}
+
+/* AI vs Manual Stats */
+.ai-summary {
+    display: flex;
+    justify-content: space-around;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+}
+.ai-summary-item {
+    text-align: center;
+}
+.ai-summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+}
+.ai-summary-item:last-child .ai-summary-value {
+    color: var(--text);
+}
+.ai-summary-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 4px;
+}
+.method-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.method-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+}
+.method-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.method-icon {
+    font-size: 16px;
+}
+.method-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+.method-count {
+    font-size: 12px;
+    color: var(--text2);
+}
+.method-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+}
+.method-count {
+    color: var(--text2);
+}
+.method-time {
+    color: var(--text2);
+}
+.ai-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text2);
+    font-size: 14px;
+}
+
+/* Insights */
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+.insight-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.insight-icon {
+    font-size: 20px;
+}
+.insight-text {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+/* Weekly Chart */
+.week-chart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    padding: 16px 0;
+}
+.chart-bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+.chart-bar {
+    width: 24px;
+    background: var(--accent);
+    border-radius: 4px 4px 0 0;
+    margin-top: auto;
+    transition: height 0.3s ease;
+    position: relative;
+}
+.chart-bar.under {
+    background: var(--success);
+}
+.chart-bar.over {
+    background: var(--warning);
+}
+.chart-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 8px;
+}
+
+/* Weekly Report */
+.weekly-report {
+    background: linear-gradient(135deg, rgba(0,122,255,0.08), rgba(52,199,89,0.08));
+    border: 1px solid rgba(0,122,255,0.15);
+}
+.report-highlight {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.report-highlight:last-child {
+    border-bottom: none;
+}
+.report-label {
+    font-size: 14px;
+    color: var(--text);
+}
+.report-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+.report-value.positive {
+    color: var(--success);
+}
+.report-value.negative {
+    color: var(--warning);
+}
+.report-insight {
+    background: rgba(255,255,255,0.6);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+}
+.report-insight-icon {
+    margin-right: 6px;
+}
+.report-empty {
+    text-align: center;
+    color: var(--text2);
+    padding: 20px;
+    font-size: 14px;
+}
+
+/* ══════════════════════════════════════
+   MODALS & SHEETS
+   ══════════════════════════════════════ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+}
+.modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Action Sheet */
+.action-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    background: var(--bg);
+    border-radius: 16px 16px 0 0;
+    z-index: 2001;
+    transition: transform 0.3s ease;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+}
+.action-sheet.show {
+    transform: translateX(-50%) translateY(0);
+}
+.sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+    margin: 8px auto 16px;
+    flex-shrink: 0;
+}
+.sheet-content {
+    padding: 0 16px 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+.sheet-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.sheet-title {
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+}
+.sheet-title:hover {
+    color: var(--accent);
+}
+.sheet-title-edit {
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.5;
+}
+.sheet-title-edit:hover {
+    opacity: 1;
+}
+.sheet-title-input {
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    width: 100%;
+    margin-bottom: 20px;
+    background: var(--bg);
+}
+
+/* Quick Routines */
+.quick-routines {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+.quick-routines-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 8px;
+}
+.quick-routines-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.quick-routine-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+    background: rgba(0,122,255,0.08);
+    color: var(--accent);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.quick-routine-btn:hover {
+    background: rgba(0,122,255,0.15);
+}
+.quick-routine-btn:active {
+    transform: scale(0.95);
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 16px;
+}
+.form-label {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    display: block;
+}
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+}
+.form-input:focus {
+    border-color: var(--accent);
+}
+
+/* Category Picker */
+.cat-picker {
+    display: flex;
+    gap: 8px;
+}
+.cat-option {
+    flex: 1;
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.cat-option.selected {
+    border-color: var(--accent);
+    background: rgba(0,122,255,0.08);
+}
+.cat-option-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 auto 6px;
+}
+.cat-option-label {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Duration Picker */
+.dur-picker {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.dur-option {
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.dur-option.selected {
+    border-color: var(--accent);
+    background: rgba(0,122,255,0.08);
+    color: var(--accent);
+}
+.dur-option.taken {
+    background: rgba(0,0,0,0.05);
+    color: var(--text3);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.dur-option.taken:hover {
+    background: rgba(0,0,0,0.05);
+    border-color: var(--border);
+}
+
+/* Time Picker Scrollable */
+.time-picker-scroll {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Action Buttons */
+.sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+}
+.sheet-btn {
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.sheet-btn:active {
+    transform: scale(0.98);
+}
+.sheet-btn.primary {
+    background: var(--accent);
+    color: white;
+}
+.sheet-btn.success {
+    background: var(--success);
+    color: white;
+}
+.sheet-btn.danger {
+    background: rgba(255,59,48,0.1);
+    color: var(--danger);
+}
+.sheet-btn.cancel {
+    background: var(--card);
+    color: var(--text);
+}
+.sheet-btn.timer {
+    background: rgba(0,122,255,0.1);
+    color: var(--accent);
+}
+.sheet-btn.timer.running {
+    background: rgba(255,149,0,0.15);
+    color: var(--warning);
+    animation: timerPulse 2s ease-in-out infinite;
+}
+@keyframes timerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Event Detail Sheet */
+.event-detail-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 16px 0;
+    margin-bottom: 16px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 12px;
+}
+.event-stat {
+    text-align: center;
+}
+.event-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+}
+.event-stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+}
+.event-stat-value.positive { color: var(--success); }
+.event-stat-value.negative { color: var(--warning); }
+
+/* Event Notes */
+.event-notes-section {
+    margin: 16px 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.event-notes-label {
+    font-size: 12px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.event-notes-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    resize: none;
+    font-family: inherit;
+    color: var(--text);
+    line-height: 1.4;
+}
+.event-notes-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--card);
+}
+
+/* Completion Method Picker */
+.completion-method-section {
+    margin: 16px 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.method-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+.method-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.method-option:active {
+    transform: scale(0.96);
+}
+.method-option.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+.method-icon {
+    font-size: 14px;
+}
+.method-other-input {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+.method-other-input input {
+    width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    text-align: center;
+}
+.method-other-input input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* Quick Complete Modal */
+.quick-complete-header {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 16px;
+}
+.quick-complete-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg);
+    border-radius: 12px;
+}
+.qc-stat {
+    text-align: center;
+}
+.qc-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+}
+.qc-stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+}
+.quick-complete-methods {
+    margin-top: 16px;
+}
+.quick-complete-methods .section-label {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    text-align: center;
+}
+.method-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+.method-chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.method-chip.selected {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+.method-chip:active {
+    transform: scale(0.95);
+}
+
+/* Time Adjust Buttons */
+.time-adjust {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0;
+}
+.adjust-btn {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.adjust-btn:active {
+    background: var(--bg);
+}
+
+/* ══════════════════════════════════════
+   TOAST
+   ══════════════════════════════════════ */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ══════════════════════════════════════
+   UTILITIES
+   ══════════════════════════════════════ */
+.hidden { display: none !important; }
+
+/* ══════════════════════════════════════
+   MORE TAB
+   ══════════════════════════════════════ */
+.more-section {
+    background: var(--card);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.more-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px 8px;
+}
+.more-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.more-item:first-of-type {
+    border-top: none;
+}
+.more-item:active {
+    background: var(--bg);
+}
+.more-icon {
+    font-size: 20px;
+    margin-right: 12px;
+}
+.more-label {
+    flex: 1;
+    font-size: 15px;
+    color: var(--text);
+}
+.more-arrow {
+    color: var(--text2);
+    font-size: 18px;
+}
+.more-hint {
+    font-size: 12px;
+    color: var(--text2);
+    padding: 8px 16px 0 16px;
+    line-height: 1.4;
+}
+.app-version {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text2);
+    padding: 20px;
+}
+
+/* ══════════════════════════════════════
+   HELP MODAL
+   ══════════════════════════════════════ */
+.help-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+}
+.help-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.help-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 90%;
+    max-width: 450px;
+    max-height: 80vh;
+    background: var(--card);
+    border-radius: 16px;
+    z-index: 2001;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.help-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+.help-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+.help-title {
+    font-size: 17px;
+    font-weight: 600;
+}
+.help-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--bg);
+    border-radius: 50%;
+    font-size: 18px;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.help-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+.help-section {
+    margin-bottom: 20px;
+}
+.help-section:last-child {
+    margin-bottom: 0;
+}
+.help-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+.help-text {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.5;
+}
+.help-code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+}
+.help-tip {
+    background: rgba(0,122,255,0.1);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--accent);
+    margin-top: 12px;
+}
+.faq-item {
+    margin-bottom: 16px;
+}
+.faq-q {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+.faq-a {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+}
+
+/* Sync URL Input */
+.sync-input-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.sync-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.sync-btn {
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Confirmation Modal */
+.confirm-modal {
+    max-width: 320px;
+    max-height: fit-content;
+}
+.confirm-message {
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.6;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.confirm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.confirm-btn {
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.confirm-btn.danger {
+    background: var(--danger);
+    color: white;
+}
+.confirm-btn.cancel {
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Onboarding */
+.onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+.onboarding-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.onboarding-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    max-width: 360px;
+    height: 420px;
+    background: var(--card);
+    border-radius: 20px;
+    z-index: 3001;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.onboarding-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+.onboarding-content {
+    padding: 32px 24px 24px;
+    text-align: center;
+    flex: 1;
+    overflow-y: auto;
+}
+.onboarding-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+.onboarding-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+}
+.onboarding-desc {
+    font-size: 15px;
+    color: var(--text2);
+    line-height: 1.5;
+}
+.onboarding-diagram {
+    margin: 20px 0;
+    padding: 16px;
+    background: var(--bg);
+    border-radius: 12px;
+}
+.onboarding-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.onboarding-flow-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.onboarding-flow-box {
+    padding: 8px 12px;
+    background: var(--card);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+}
+.onboarding-flow-box.highlight {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+.onboarding-flow-label {
+    font-size: 10px;
+    color: var(--text2);
+}
+.onboarding-flow-arrow {
+    font-size: 16px;
+    color: var(--text2);
+}
+.onboarding-concept {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+    text-align: left;
+}
+.onboarding-concept-item {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 10px;
+}
+.onboarding-concept-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+.onboarding-concept-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.onboarding-concept-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.4;
+}
+.onboarding-timer-demo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 20px 0;
+}
+.onboarding-timer-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.onboarding-timer-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+.onboarding-timer-btn.play {
+    background: #e8eef4;
+    color: #333;
+}
+.onboarding-timer-btn.timing {
+    background: #007aff;
+    color: white;
+}
+.onboarding-timer-label {
+    font-size: 12px;
+    color: var(--text2);
+}
+.onboarding-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding-bottom: 16px;
+}
+.onboarding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.2s;
+}
+.onboarding-dot.active {
+    background: var(--accent);
+    width: 20px;
+    border-radius: 4px;
+}
+.onboarding-actions {
+    display: flex;
+    border-top: 1px solid var(--border);
+}
+.onboarding-skip,
+.onboarding-next {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.onboarding-skip {
+    background: var(--card);
+    color: var(--text2);
+}
+.onboarding-next {
+    background: var(--accent);
+    color: white;
+}
+.onboarding-skip:active,
+.onboarding-next:active {
+    opacity: 0.8;
+}
+
+/* Desktop adjustments */
+@media (min-width: 600px) {
+    .app {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border-radius: 24px;
+        box-shadow: 0 10px 60px rgba(0,0,0,0.12);
+        min-height: calc(100vh - 40px);
+        overflow: hidden;
+    }
+    .bottom-nav {
+        border-radius: 0 0 24px 24px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title" id="headerTitle">Tasks</div>
+        <div class="header-subtitle" id="headerSubtitle">4 tasks · 5h 30m total</div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Tasks Tab -->
+        <div class="tab-content active" id="tabTasks">
+            <div class="tasks-header">
+                <div class="tasks-title">My Tasks</div>
+                <button class="add-btn" onclick="openAddTask()">+</button>
+            </div>
+            <div class="task-list" id="taskList"></div>
+            <div class="tasks-summary" id="tasksSummary"></div>
+        </div>
+
+        <!-- Today Tab -->
+        <div class="tab-content" id="tabToday">
+            <div class="today-header">
+                <div class="today-nav">
+                    <button class="today-nav-btn" onclick="navDay(-1)">‹</button>
+                    <div class="today-date" id="todayDate">Today, Feb 7</div>
+                    <button class="today-nav-btn" onclick="navDay(1)">›</button>
+                </div>
+                <div class="today-actions">
+                    <button class="today-import-btn" onclick="document.getElementById('icsInput').click()" title="Import .ics">📅+</button>
+                    <button class="today-now-btn" onclick="navToday()">Today</button>
+                </div>
+            </div>
+            <div class="time-grid" id="timeGrid"></div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div class="tab-content" id="tabStats">
+            <!-- AI Efficiency Hero -->
+            <div class="stats-card ai-hero">
+                <div class="stats-card-title">🤖 AI Efficiency</div>
+                <div class="ai-hero-content" id="aiHeroContent">
+                    <!-- Dynamic content rendered by renderAiHero() -->
+                </div>
+            </div>
+
+            <!-- Insights - More Prominent -->
+            <div class="stats-card insights-card">
+                <div class="stats-card-title">💡 Insights</div>
+                <div id="insightsList"></div>
+            </div>
+
+            <!-- Time by Category -->
+            <div class="stats-card">
+                <div class="stats-card-title">Time Distribution</div>
+                <div class="category-time-chart" id="categoryTimeChart"></div>
+            </div>
+
+            <!-- Quick Summary -->
+            <div class="stats-card">
+                <div class="stats-card-title">This Week</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statCompleted">0</div>
+                        <div class="stat-label">Tasks Done</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statTotalTime">0h</div>
+                        <div class="stat-label">Time Tracked</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statAiTasks">0</div>
+                        <div class="stat-label">AI Tasks</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statManualTasks">0</div>
+                        <div class="stat-label">Manual Tasks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Report -->
+            <div class="stats-card weekly-report" id="weeklyReport">
+                <div class="stats-card-title">📊 Weekly Report</div>
+                <div id="weeklyReportContent"></div>
+            </div>
+
+            <!-- Method Breakdown -->
+            <div class="stats-card">
+                <div class="stats-card-title">AI Tool Usage</div>
+                <div id="methodStats"></div>
+            </div>
+        </div>
+
+        <!-- More Tab -->
+        <div class="tab-content" id="tabMore">
+            <div class="more-section">
+                <div class="more-section-title">Help</div>
+                <div class="more-item" onclick="showOnboarding()">
+                    <span class="more-icon">👋</span>
+                    <span class="more-label">View Tutorial</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <div class="more-item" onclick="openHelp('quickstart')">
+                    <span class="more-icon">🚀</span>
+                    <span class="more-label">Quick Start Guide</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <div class="more-item" onclick="openHelp('features')">
+                    <span class="more-icon">📖</span>
+                    <span class="more-label">Feature Guide</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <div class="more-item" onclick="openHelp('faq')">
+                    <span class="more-icon">❓</span>
+                    <span class="more-label">FAQ</span>
+                    <span class="more-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="more-section">
+                <div class="more-section-title">Data Sync</div>
+                <div class="more-item" onclick="exportBackup()">
+                    <span class="more-icon">💾</span>
+                    <span class="more-label">Export Backup</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <div class="more-item" onclick="document.getElementById('importFile').click()">
+                    <span class="more-icon">📥</span>
+                    <span class="more-label">Import Backup</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <div class="more-item" onclick="openSyncUrl()">
+                    <span class="more-icon">🔗</span>
+                    <span class="more-label">Sync from URL</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
+            </div>
+
+            <!-- Hidden ICS input for Today tab import button -->
+            <input type="file" id="icsInput" accept=".ics" style="display:none" onchange="handleICSFile(event)">
+
+            <div class="more-section">
+                <div class="more-section-title">AI Analysis</div>
+                <div class="more-item" onclick="exportForAI()">
+                    <span class="more-icon">🤖</span>
+                    <span class="more-label">Export for AI Analysis</span>
+                    <span class="more-arrow">›</span>
+                </div>
+                <div class="more-hint">Generate a prompt to paste into Claude/ChatGPT for time audit insights</div>
+            </div>
+
+            <div class="more-section">
+                <div class="more-section-title">Settings</div>
+                <div class="more-item" onclick="clearAllData()">
+                    <span class="more-icon">🗑️</span>
+                    <span class="more-label" style="color:var(--danger)">Clear All Data</span>
+                    <span class="more-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="app-version">AIAudit v1.1</div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" data-tab="tabTasks" onclick="switchTab('tabTasks')">
+            <div class="nav-icon">📋</div>
+            <div>Tasks</div>
+        </div>
+        <div class="nav-item" data-tab="tabToday" onclick="switchTab('tabToday')">
+            <div class="nav-icon">📅</div>
+            <div>Today</div>
+        </div>
+        <div class="nav-item" data-tab="tabStats" onclick="switchTab('tabStats')">
+            <div class="nav-icon">📊</div>
+            <div>Stats</div>
+        </div>
+        <div class="nav-item" data-tab="tabMore" onclick="switchTab('tabMore')">
+            <div class="nav-icon">⋯</div>
+            <div>More</div>
+        </div>
+    </nav>
+</div>
+
+<!-- Add Task Sheet -->
+<div class="modal-overlay" id="addTaskOverlay" onclick="closeAddTask()"></div>
+<div class="action-sheet" id="addTaskSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+        <div class="sheet-title">New Task</div>
+        
+        <div class="quick-routines">
+            <div class="quick-routines-label">Quick Routines <span style="font-size:10px;color:var(--text2)">(hold to edit)</span></div>
+            <div class="quick-routines-list" id="quickRoutinesList">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Task Name</label>
+            <input type="text" class="form-input" id="taskNameInput" placeholder="What needs to be done?" list="taskNameSuggestions" autocomplete="off">
+            <datalist id="taskNameSuggestions"></datalist>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <div class="cat-picker" id="catPicker">
+                <div class="cat-option selected" data-cat="work" onclick="selectCat('work')">
+                    <div class="cat-option-dot" style="background:var(--work-dot)"></div>
+                    <div class="cat-option-label">Work</div>
+                </div>
+                <div class="cat-option" data-cat="meeting" onclick="selectCat('meeting')">
+                    <div class="cat-option-dot" style="background:var(--meeting-dot)"></div>
+                    <div class="cat-option-label">Meeting</div>
+                </div>
+                <div class="cat-option" data-cat="ai" onclick="selectCat('ai')">
+                    <div class="cat-option-dot" style="background:var(--ai-dot)"></div>
+                    <div class="cat-option-label">AI</div>
+                </div>
+                <div class="cat-option" data-cat="personal" onclick="selectCat('personal')">
+                    <div class="cat-option-dot" style="background:var(--personal-dot)"></div>
+                    <div class="cat-option-label">Personal</div>
+                </div>
+                <div class="cat-option" data-cat="health" onclick="selectCat('health')">
+                    <div class="cat-option-dot" style="background:var(--health-dot)"></div>
+                    <div class="cat-option-label">Health</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Priority</label>
+            <div class="priority-picker" id="priorityPicker">
+                <div class="priority-option high" data-priority="high" onclick="selectPriority('high')">
+                    <div class="priority-option-icon">🔴</div>
+                    <div class="priority-option-label">High</div>
+                </div>
+                <div class="priority-option medium selected" data-priority="medium" onclick="selectPriority('medium')">
+                    <div class="priority-option-icon">🟡</div>
+                    <div class="priority-option-label">Medium</div>
+                </div>
+                <div class="priority-option low" data-priority="low" onclick="selectPriority('low')">
+                    <div class="priority-option-icon">🟢</div>
+                    <div class="priority-option-label">Low</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Due Date <span class="form-label-hint">(optional)</span></label>
+            <div class="due-date-picker">
+                <input type="date" class="due-date-input" id="dueDateInput" onchange="selectDueDate(this.value)">
+                <div class="due-date-shortcuts">
+                    <span class="due-shortcut" onclick="setDueShortcut('today')">Today</span>
+                    <span class="due-shortcut" onclick="setDueShortcut('tomorrow')">Tomorrow</span>
+                    <span class="due-shortcut" onclick="setDueShortcut('week')">This Week</span>
+                    <span class="due-shortcut" onclick="setDueShortcut('none')">No Date</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Estimated Duration</label>
+            <div class="dur-picker" id="durPicker">
+                <div class="dur-option" data-dur="15" onclick="selectDur(15)">15m</div>
+                <div class="dur-option" data-dur="30" onclick="selectDur(30)">30m</div>
+                <div class="dur-option" data-dur="45" onclick="selectDur(45)">45m</div>
+                <div class="dur-option selected" data-dur="60" onclick="selectDur(60)">1h</div>
+                <div class="dur-option" data-dur="90" onclick="selectDur(90)">1.5h</div>
+                <div class="dur-option" data-dur="120" onclick="selectDur(120)">2h</div>
+                <div class="dur-option" data-dur="180" onclick="selectDur(180)">3h</div>
+                <div class="dur-option" data-dur="240" onclick="selectDur(240)">4h</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Routine <span class="form-label-hint">(auto-schedule)</span></label>
+            <div class="routine-toggle" onclick="toggleRoutine()">
+                <span id="routineToggleText">Off</span>
+                <span class="routine-toggle-switch" id="routineToggleSwitch"></span>
+            </div>
+            <div class="routine-settings" id="routineSettings" style="display:none">
+                <div class="routine-row">
+                    <label class="routine-label">Day</label>
+                    <div class="routine-day-picker" id="routineDayPicker">
+                        <span class="routine-day" data-day="daily" onclick="selectRoutineDay('daily')">Daily</span>
+                        <span class="routine-day" data-day="weekdays" onclick="selectRoutineDay('weekdays')">Weekdays</span>
+                        <span class="routine-day" data-day="mon" onclick="selectRoutineDay('mon')">Mon</span>
+                        <span class="routine-day" data-day="tue" onclick="selectRoutineDay('tue')">Tue</span>
+                        <span class="routine-day" data-day="wed" onclick="selectRoutineDay('wed')">Wed</span>
+                        <span class="routine-day" data-day="thu" onclick="selectRoutineDay('thu')">Thu</span>
+                        <span class="routine-day" data-day="fri" onclick="selectRoutineDay('fri')">Fri</span>
+                        <span class="routine-day" data-day="sat" onclick="selectRoutineDay('sat')">Sat</span>
+                        <span class="routine-day" data-day="sun" onclick="selectRoutineDay('sun')">Sun</span>
+                    </div>
+                </div>
+                <div class="routine-row">
+                    <label class="routine-label">Time</label>
+                    <select class="routine-time-select" id="routineTimeSelect" onchange="selectRoutineTime(this.value)">
+                        <option value="300">5:00 AM</option>
+                        <option value="360">6:00 AM</option>
+                        <option value="420">7:00 AM</option>
+                        <option value="480">8:00 AM</option>
+                        <option value="540" selected>9:00 AM</option>
+                        <option value="600">10:00 AM</option>
+                        <option value="660">11:00 AM</option>
+                        <option value="720">12:00 PM</option>
+                        <option value="780">1:00 PM</option>
+                        <option value="840">2:00 PM</option>
+                        <option value="900">3:00 PM</option>
+                        <option value="960">4:00 PM</option>
+                        <option value="1020">5:00 PM</option>
+                        <option value="1080">6:00 PM</option>
+                        <option value="1140">7:00 PM</option>
+                        <option value="1200">8:00 PM</option>
+                        <option value="1260">9:00 PM</option>
+                        <option value="1320">10:00 PM</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-actions">
+            <button class="sheet-btn primary" onclick="confirmAddTask()">Add Task</button>
+            <button class="sheet-btn cancel" onclick="closeAddTask()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Task Detail / Schedule Sheet -->
+<div class="modal-overlay" id="taskDetailOverlay" onclick="closeTaskDetail()"></div>
+<div class="action-sheet" id="taskDetailSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+        <div class="sheet-title-row">
+            <div class="sheet-title" id="taskDetailTitle" onclick="editTaskName()">Task Name</div>
+            <span class="sheet-title-edit" onclick="editTaskName()">✏️</span>
+        </div>
+        <input type="text" class="sheet-title-input" id="taskNameEditInput" style="display:none" onblur="saveTaskName()" onkeydown="if(event.key==='Enter')saveTaskName()">
+        
+        <!-- Subtasks Section -->
+        <div class="form-group" id="subtasksSection">
+            <label class="form-label">Subtasks <span id="subtaskTotal"></span></label>
+            <div id="subtasksList"></div>
+            <div class="add-subtask-row" id="addSubtaskRow">
+                <input type="text" class="add-subtask-input" id="newSubtaskName" placeholder="Add subtask...">
+                <select class="add-subtask-dur" id="newSubtaskDur" onchange="onSubtaskDurChange()">
+                    <option value="15">15m</option>
+                    <option value="30" selected>30m</option>
+                    <option value="45">45m</option>
+                    <option value="60">1h</option>
+                    <option value="90">1.5h</option>
+                    <option value="120">2h</option>
+                    <option value="custom">Other...</option>
+                </select>
+                <input type="number" class="add-subtask-dur" id="newSubtaskDurCustom" placeholder="hrs" min="0.5" max="8" step="0.5" style="display:none;">
+                <button class="add-subtask-btn" onclick="addSubtask()">+</button>
+            </div>
+        </div>
+
+        <!-- Schedule What -->
+        <div class="form-group" id="scheduleWhatSection" style="display:none;">
+            <label class="form-label">Schedule what?</label>
+            <div id="scheduleWhatList"></div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Schedule for today at:</label>
+            <div id="timePicker"></div>
+        </div>
+
+        <div class="sheet-actions">
+            <button class="sheet-btn primary" onclick="scheduleTask()">📅 Schedule</button>
+            <button class="sheet-btn danger" onclick="deleteTask()">Delete Task</button>
+            <button class="sheet-btn cancel" onclick="closeTaskDetail()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Sheet -->
+<div class="modal-overlay" id="eventDetailOverlay" onclick="closeEventDetail()"></div>
+<div class="action-sheet" id="eventDetailSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+        <div class="sheet-title" id="eventDetailTitle">Event Name</div>
+        
+        <div class="event-detail-stats">
+            <div class="event-stat">
+                <div class="event-stat-value" id="eventEstimate">1h</div>
+                <div class="event-stat-label">Estimated</div>
+            </div>
+            <div class="event-stat">
+                <div class="event-stat-value" id="eventElapsed">45m</div>
+                <div class="event-stat-label">Elapsed</div>
+            </div>
+            <div class="event-stat">
+                <div class="event-stat-value" id="eventDiff">-15m</div>
+                <div class="event-stat-label">Difference</div>
+            </div>
+        </div>
+
+        <div class="time-adjust">
+            <button class="adjust-btn" onclick="adjustEventTime(-15)">-15m</button>
+            <button class="adjust-btn" onclick="adjustEventTime(-5)">-5m</button>
+            <button class="adjust-btn" onclick="adjustEventTime(5)">+5m</button>
+            <button class="adjust-btn" onclick="adjustEventTime(15)">+15m</button>
+        </div>
+
+        <div class="completion-method-section">
+            <div class="event-notes-label">Completed with</div>
+            <div class="method-picker" id="methodPicker">
+                <div class="method-option selected" data-method="manual" onclick="toggleMethod('manual')">
+                    <span class="method-icon">✋</span>
+                    <span>Manual</span>
+                </div>
+                <div class="method-option" data-method="claude" onclick="toggleMethod('claude')">
+                    <span class="method-icon">🤖</span>
+                    <span>Claude</span>
+                </div>
+                <div class="method-option" data-method="gemini" onclick="toggleMethod('gemini')">
+                    <span class="method-icon">✨</span>
+                    <span>Gemini</span>
+                </div>
+                <div class="method-option" data-method="chatgpt" onclick="toggleMethod('chatgpt')">
+                    <span class="method-icon">💬</span>
+                    <span>ChatGPT</span>
+                </div>
+                <div class="method-option" data-method="wispr" onclick="toggleMethod('wispr')">
+                    <span class="method-icon">🎙️</span>
+                    <span>Wispr</span>
+                </div>
+                <div class="method-option" data-method="other" onclick="toggleMethod('other')">
+                    <span class="method-icon">🔧</span>
+                    <span>Other</span>
+                </div>
+            </div>
+            <div class="method-other-input" id="methodOtherInput" style="display:none;">
+                <input type="text" id="methodOtherText" placeholder="Enter tool name...">
+            </div>
+        </div>
+
+        <div class="event-notes-section">
+            <div class="event-notes-label">Notes</div>
+            <textarea class="event-notes-input" id="eventNotesInput" placeholder="Add notes..." rows="3"></textarea>
+        </div>
+
+        <div class="sheet-actions" id="eventActions">
+            <button class="sheet-btn timer" id="eventTimerBtn" onclick="toggleEventTimer()">▶ Start</button>
+            <button class="sheet-btn success" onclick="completeEvent()">✓ Complete</button>
+            <button class="sheet-btn danger" onclick="deleteEvent()">Delete</button>
+            <button class="sheet-btn cancel" onclick="closeEventDetail()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Subtask Modal -->
+<div class="help-overlay" id="editSubtaskOverlay" onclick="closeEditSubtask()"></div>
+<div class="help-modal edit-subtask-modal" id="editSubtaskModal">
+    <div class="help-header">
+        <div class="help-title">Edit Subtask</div>
+        <button class="help-close" onclick="closeEditSubtask()">×</button>
+    </div>
+    <div class="help-body">
+        <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" id="editSubtaskName" placeholder="Subtask name">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Duration</label>
+            <select class="form-input" id="editSubtaskDur">
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="90">1.5 hours</option>
+                <option value="120">2 hours</option>
+                <option value="180">3 hours</option>
+                <option value="240">4 hours</option>
+            </select>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-btn primary" onclick="saveSubtaskEdit()">Save</button>
+            <button class="confirm-btn cancel" onclick="closeEditSubtask()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Complete Modal -->
+<div class="modal-overlay" id="quickCompleteOverlay" onclick="closeQuickComplete()"></div>
+<div class="action-sheet" id="quickCompleteSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+        <div id="quickCompleteContent"></div>
+        <div class="sheet-actions" style="margin-top: 16px;">
+            <button class="sheet-btn primary" onclick="confirmQuickComplete()">Complete Task</button>
+            <button class="sheet-btn secondary" onclick="closeQuickComplete()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Quick Routine Modal -->
+<div class="help-overlay" id="editRoutineOverlay" onclick="closeEditRoutine()"></div>
+<div class="help-modal" id="editRoutineModal" style="max-width:340px;">
+    <div class="help-header">
+        <div class="help-title">Edit Quick Routine</div>
+        <button class="help-close" onclick="closeEditRoutine()">×</button>
+    </div>
+    <div class="help-body">
+        <div class="form-group">
+            <label class="form-label">Icon (emoji)</label>
+            <input type="text" class="form-input" id="editRoutineIcon" placeholder="📄" maxlength="2" style="font-size:24px;text-align:center;width:60px;">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Button Label</label>
+            <input type="text" class="form-input" id="editRoutineLabel" placeholder="Short name" maxlength="12">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Task Name</label>
+            <input type="text" class="form-input" id="editRoutineName" placeholder="Full task name">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-input" id="editRoutineCat">
+                <option value="work">Work</option>
+                <option value="meeting">Meeting</option>
+                <option value="ai">AI</option>
+                <option value="personal">Personal</option>
+                <option value="health">Health</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Duration</label>
+            <select class="form-input" id="editRoutineDur">
+                <option value="5">5 min</option>
+                <option value="10">10 min</option>
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="45">45 min</option>
+                <option value="60">1 hour</option>
+                <option value="90">1.5 hours</option>
+                <option value="120">2 hours</option>
+            </select>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-btn primary" onclick="saveRoutineEdit()">Save</button>
+            <button class="confirm-btn cancel" onclick="resetRoutineToDefault()">Reset</button>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="help-overlay" id="helpOverlay" onclick="closeHelp()"></div>
+<div class="help-modal" id="helpModal">
+    <div class="help-header">
+        <div class="help-title" id="helpTitle">Help</div>
+        <button class="help-close" onclick="closeHelp()">×</button>
+    </div>
+    <div class="help-body" id="helpBody"></div>
+</div>
+
+<!-- Clear Data Confirmation Modal -->
+<div class="help-overlay" id="confirmClearOverlay" onclick="cancelClearData()"></div>
+<div class="help-modal confirm-modal" id="confirmClearModal">
+    <div class="help-header">
+        <div class="help-title">⚠️ Clear All Data</div>
+    </div>
+    <div class="help-body">
+        <div class="confirm-message">
+            This will delete ALL your tasks, events, and history.<br><br>
+            <strong>This cannot be undone.</strong>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-btn danger" onclick="confirmClearData()">Delete Everything</button>
+            <button class="confirm-btn cancel" onclick="cancelClearData()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Onboarding Modal -->
+<div class="onboarding-overlay" id="onboardingOverlay"></div>
+<div class="onboarding-modal" id="onboardingModal">
+    <div class="onboarding-content" id="onboardingContent"></div>
+    <div class="onboarding-dots" id="onboardingDots"></div>
+    <div class="onboarding-actions">
+        <button class="onboarding-skip" id="onboardingSkip" onclick="skipOnboarding()">Skip</button>
+        <button class="onboarding-next" id="onboardingNext" onclick="nextOnboarding()">Next</button>
+    </div>
+</div>
+
+<!-- Sync URL Modal -->
+<div class="help-overlay" id="syncOverlay" onclick="closeSyncOverlay()"></div>
+<div class="help-modal" id="syncModal">
+    <div class="help-header">
+        <div class="help-title">Sync from URL</div>
+        <button class="help-close" onclick="closeSyncUrl()">×</button>
+    </div>
+    <div class="help-body">
+        <div class="help-section">
+            <div class="help-section-title">How it works</div>
+            <div class="help-text">
+                1. Export your backup and upload to Google Drive<br>
+                2. Get a shareable link (anyone with link can view)<br>
+                3. Paste the link below to sync
+            </div>
+        </div>
+        <div class="help-section">
+            <div class="help-section-title">Backup URL</div>
+            <div class="sync-input-group">
+                <input type="text" class="sync-input" id="syncUrlInput" placeholder="https://drive.google.com/...">
+                <button class="sync-btn" onclick="loadFromUrl()">Sync</button>
+            </div>
+            <div class="help-tip">💡 For Google Drive: Change /view to /uc?export=download in URL</div>
+        </div>
+    </div>
+</div>
+
+<div class="help-modal" id="aiAnalysisModal" style="max-width:500px;">
+    <div class="help-header">
+        <div class="help-title">AI Analysis Prompt</div>
+        <button class="help-close" onclick="closeAIAnalysis()">×</button>
+    </div>
+    <div class="help-body">
+        <div class="help-section">
+            <div class="help-section-title">How to use</div>
+            <div class="help-text">
+                1. Copy the prompt below<br>
+                2. Paste into Claude, ChatGPT, or Gemini<br>
+                3. Get insights on which tasks can be automated
+            </div>
+        </div>
+        <div class="help-section">
+            <div class="help-section-title">Generated Prompt</div>
+            <textarea id="aiPromptText" readonly style="width:100%;height:200px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;resize:vertical;"></textarea>
+            <button class="sync-btn" onclick="copyAIPrompt()" style="width:100%;margin-top:12px;">📋 Copy to Clipboard</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+// DATA & STATE
+// ══════════════════════════════════════
+const CATS = [
+    { id: 'work', label: 'Work', color: '#007aff' },
+    { id: 'meeting', label: 'Meeting', color: '#8e8e93' },
+    { id: 'ai', label: 'AI', color: '#ff9500' },
+    { id: 'personal', label: 'Personal', color: '#34c759' },
+    { id: 'health', label: 'Health', color: '#ff6b6b' }
+];
+
+let tasks = [];
+let events = [];
+let completedHistory = []; // For stats
+
+let currentDate = new Date();
+let selectedTaskId = null;
+let selectedEventId = null;
+let selectedCat = 'work';
+let selectedDur = 60;
+let selectedTime = null;
+let selectedPriority = 'medium';
+let selectedDueDate = null; // Due date for task
+let selectedRoutine = null; // { day: 'mon'|'daily'|'weekdays'|etc, time: minutes }
+let selectedMethods = new Set(['manual']); // Completion methods tracking (multi-select)
+let lowPriorityCollapsed = true; // Collapse low priority tasks by default
+let expandedTasks = new Set(); // Track which tasks have subtasks expanded
+
+const WORK_START = 5;
+const WORK_END = 23;
+
+// ══════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════
+function loadData() {
+    try {
+        tasks = JSON.parse(localStorage.getItem('em_tasks')) || [];
+        events = JSON.parse(localStorage.getItem('em_events')) || [];
+        completedHistory = JSON.parse(localStorage.getItem('em_history')) || [];
+    } catch(e) {
+        console.log('Error loading data:', e);
+    }
+}
+
+function saveData() {
+    localStorage.setItem('em_tasks', JSON.stringify(tasks));
+    localStorage.setItem('em_events', JSON.stringify(events));
+    localStorage.setItem('em_history', JSON.stringify(completedHistory));
+}
+
+// ══════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════
+function formatDuration(mins) {
+    if (mins < 60) return `${mins}m`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+function formatTime(mins) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function formatDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function formatDateDisplay(date) {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (formatDateKey(date) === formatDateKey(today)) {
+        return 'Today, ' + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (formatDateKey(date) === formatDateKey(tomorrow)) {
+        return 'Tomorrow, ' + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function esc(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+}
+
+// ══════════════════════════════════════
+// TAB NAVIGATION
+// ══════════════════════════════════════
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
+    
+    // Update header
+    const headers = {
+        tabTasks: { title: 'Tasks', subtitle: `${tasks.length} tasks · ${formatDuration(tasks.reduce((s,t) => s + t.duration, 0))} total` },
+        tabToday: { title: 'Schedule', subtitle: formatDateDisplay(currentDate) },
+        tabStats: { title: 'Statistics', subtitle: 'Is AI making you faster?' },
+        tabMore: { title: 'More', subtitle: 'Help, sync & settings' }
+    };
+    
+    const header = headers[tabId] || { title: 'AIAudit', subtitle: '' };
+    document.getElementById('headerTitle').textContent = header.title;
+    document.getElementById('headerSubtitle').textContent = header.subtitle;
+    
+    if (tabId === 'tabToday') {
+        renderTimeGrid();
+        setTimeout(updateNowLine, 50); // Ensure now line is current
+    }
+    if (tabId === 'tabStats') renderStats();
+}
+
+// ══════════════════════════════════════
+// TASKS TAB
+// ══════════════════════════════════════
+function renderTasks() {
+    const container = document.getElementById('taskList');
+    const dateKey = formatDateKey(currentDate);
+    
+    const renderTaskItem = (t) => {
+        const scheduled = events.some(e => e.taskId === t.id && e.date === dateKey && !e.completed);
+        const subtasks = t.subtasks || [];
+        const hasSubtasks = subtasks.length > 0;
+        const doneCount = subtasks.filter(s => s.done).length;
+        const isExpanded = expandedTasks.has(t.id);
+        
+        const totalDur = hasSubtasks 
+            ? subtasks.reduce((sum, s) => sum + (s.duration || 30), 0)
+            : t.duration;
+        
+        const subtaskBadge = hasSubtasks 
+            ? `<span class="task-subtask-badge" onclick="event.stopPropagation(); toggleTaskExpand('${t.id}')">${doneCount}/${subtasks.length}</span>` 
+            : '';
+        
+        const priorityLabel = { high: 'H', medium: 'M', low: 'L' };
+        const priorityBadge = t.priority 
+            ? `<span class="priority-badge ${t.priority}">${priorityLabel[t.priority] || t.priority}</span>`
+            : '';
+        
+        // Due date display
+        let dueBadge = '';
+        if (t.dueDate) {
+            const today = formatDateKey(new Date());
+            const tomorrow = formatDateKey(new Date(Date.now() + 86400000));
+            let dueClass = '';
+            let dueText = '';
+            
+            if (t.dueDate < today) {
+                dueClass = 'overdue';
+                dueText = 'Overdue';
+            } else if (t.dueDate === today) {
+                dueClass = 'today';
+                dueText = 'Today';
+            } else if (t.dueDate === tomorrow) {
+                dueClass = 'soon';
+                dueText = 'Tomorrow';
+            } else {
+                const d = new Date(t.dueDate);
+                dueText = `${d.getMonth()+1}/${d.getDate()}`;
+            }
+            dueBadge = `<span class="task-due ${dueClass}">📅 ${dueText}</span>`;
+        }
+        
+        // Routine badge
+        let routineBadge = '';
+        if (t.routine) {
+            const dayLabels = { daily: 'Daily', weekdays: 'Weekdays', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+            const timeStr = formatTime(t.routine.time);
+            routineBadge = `<span class="task-routine">🔁 ${dayLabels[t.routine.day] || t.routine.day} ${timeStr}</span>`;
+        }
+        
+        // Expand arrow for tasks with subtasks
+        const expandArrow = hasSubtasks 
+            ? `<div class="task-expand ${isExpanded ? 'expanded' : ''}" onclick="event.stopPropagation(); toggleTaskExpand('${t.id}')">${isExpanded ? '▲' : '▼'}</div>`
+            : `<div class="task-arrow">›</div>`;
+        
+        // Simple dot for all tasks (no timer in Tasks tab)
+        const taskDot = `<div class="task-dot ${t.category}"></div>`;
+        
+        // Find scheduled event info
+        const taskEvents = events.filter(e => e.taskId === t.id && !e.completed);
+        let scheduledInfo = '';
+        if (taskEvents.length > 0) {
+            taskEvents.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return a.start - b.start;
+            });
+            const nextEvent = taskEvents[0];
+            const today = formatDateKey(new Date());
+            const tomorrow = formatDateKey(new Date(Date.now() + 86400000));
+            
+            let dateLabel = '';
+            if (nextEvent.date === today) {
+                dateLabel = `Today ${formatTime(nextEvent.start)}`;
+            } else if (nextEvent.date === tomorrow) {
+                dateLabel = `Tomorrow ${formatTime(nextEvent.start)}`;
+            } else {
+                const d = new Date(nextEvent.date);
+                dateLabel = `${d.getMonth()+1}/${d.getDate()} ${formatTime(nextEvent.start)}`;
+            }
+            scheduledInfo = `📅 ${dateLabel}`;
+        }
+        
+        // Meta text
+        let metaText = scheduledInfo 
+            ? scheduledInfo
+            : hasSubtasks ? `${subtasks.length} subtasks` 
+            : 'Tap to schedule';
+        
+        let html = `
+            <div class="task-item ${scheduled ? 'scheduled' : ''} ${isExpanded ? 'has-subtasks-open' : ''}" onclick="openTaskDetail('${t.id}')">
+                ${taskDot}
+                <div class="task-info">
+                    <div class="task-name">${esc(t.name)}${priorityBadge}</div>
+                    <div class="task-meta">${metaText}${dueBadge}${routineBadge}</div>
+                </div>
+                ${subtaskBadge}
+                <div class="task-dur">${formatDuration(totalDur)}</div>
+                ${expandArrow}
+            </div>
+        `;
+        
+        // Render inline subtasks if expanded
+        if (hasSubtasks && isExpanded) {
+            html += `<div class="inline-subtasks">`;
+            subtasks.forEach((st, idx) => {
+                html += `
+                    <div class="inline-subtask ${st.done ? 'done' : ''}" onclick="event.stopPropagation(); toggleInlineSubtask('${t.id}', ${idx})">
+                        <div class="inline-subtask-check">${st.done ? '✓' : ''}</div>
+                        <div class="inline-subtask-name">${esc(st.name)}</div>
+                        <div class="inline-subtask-dur">${formatDuration(st.duration || 30)}</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        
+        return html;
+    };
+    
+    const calcTotalDur = (taskArr) => taskArr.reduce((s, t) => {
+        const subtasks = t.subtasks || [];
+        return s + (subtasks.length > 0 
+            ? subtasks.reduce((sum, st) => sum + (st.duration || 30), 0) 
+            : t.duration);
+    }, 0);
+    
+    if (tasks.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div class="empty-text">No tasks yet.<br>Tap + to add your first task!</div>
+            </div>
+        `;
+    } else {
+        // Separate high/medium from low priority
+        const mainTasks = tasks.filter(t => t.priority !== 'low');
+        const lowTasks = tasks.filter(t => t.priority === 'low');
+        
+        // Sort: priority → scheduled date (nearest first) → name
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        
+        // Helper: get earliest scheduled date for a task
+        const getEarliestSchedule = (task) => {
+            const taskEvents = events.filter(e => e.taskId === task.id && !e.completed);
+            if (taskEvents.length === 0) return '9999-99-99';
+            taskEvents.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return a.start - b.start;
+            });
+            return taskEvents[0].date;
+        };
+        
+        const sortFn = (a, b) => {
+            // First by priority
+            const pA = priorityOrder[a.priority] ?? 1;
+            const pB = priorityOrder[b.priority] ?? 1;
+            if (pA !== pB) return pA - pB;
+            // Then by scheduled date (nearest first)
+            const sA = getEarliestSchedule(a);
+            const sB = getEarliestSchedule(b);
+            if (sA !== sB) return sA.localeCompare(sB);
+            // Then by name
+            return a.name.localeCompare(b.name);
+        };
+        
+        mainTasks.sort(sortFn);
+        lowTasks.sort(sortFn);
+        
+        let html = mainTasks.map(renderTaskItem).join('');
+        
+        // Low priority - collapsible
+        if (lowTasks.length > 0) {
+            const totalLowDur = calcTotalDur(lowTasks);
+            html += `
+                <div class="low-priority-header" onclick="toggleLowPriority()">
+                    <span class="low-priority-dot"></span>
+                    <span class="low-priority-label">Low Priority (${lowTasks.length})</span>
+                    <span class="low-priority-dur">${formatDuration(totalLowDur)}</span>
+                    <span class="low-priority-arrow">${lowPriorityCollapsed ? '▼' : '▲'}</span>
+                </div>
+            `;
+            if (!lowPriorityCollapsed) {
+                html += `<div class="low-priority-tasks">${lowTasks.map(renderTaskItem).join('')}</div>`;
+            }
+        }
+        
+        container.innerHTML = html;
+    }
+    
+    // Summary - calculate with subtask totals
+    const total = tasks.reduce((s, t) => {
+        const subtasks = t.subtasks || [];
+        if (subtasks.length > 0) {
+            return s + subtasks.reduce((sum, st) => sum + (st.duration || 30), 0);
+        }
+        return s + t.duration;
+    }, 0);
+    const scheduledToday = events.filter(e => e.date === dateKey && !e.completed).reduce((s, e) => s + e.estimatedDuration, 0);
+    
+    document.getElementById('tasksSummary').innerHTML = `
+        <div class="summary-row">
+            <span>Total planned</span>
+            <span class="summary-value">${formatDuration(total)}</span>
+        </div>
+        <div class="summary-row">
+            <span>Scheduled today</span>
+            <span class="summary-value">${formatDuration(scheduledToday)}</span>
+        </div>
+    `;
+    
+    // Update header
+    document.getElementById('headerSubtitle').textContent = `${tasks.length} tasks · ${formatDuration(total)} total`;
+}
+
+function toggleLowPriority() {
+    lowPriorityCollapsed = !lowPriorityCollapsed;
+    renderTasks();
+}
+
+function toggleTaskExpand(taskId) {
+    if (expandedTasks.has(taskId)) {
+        expandedTasks.delete(taskId);
+    } else {
+        expandedTasks.add(taskId);
+    }
+    renderTasks();
+}
+
+function toggleInlineSubtask(taskId, subtaskIdx) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.subtasks || !task.subtasks[subtaskIdx]) return;
+    
+    task.subtasks[subtaskIdx].done = !task.subtasks[subtaskIdx].done;
+    saveData();
+    renderTasks();
+}
+
+function openAddTask() {
+    document.getElementById('taskNameInput').value = '';
+    selectedCat = 'work';
+    selectedDur = 60;
+    selectedPriority = 'medium';
+    selectedDueDate = null;
+    selectedRoutine = null;
+    
+    document.querySelectorAll('#catPicker .cat-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.cat === 'work');
+    });
+    document.querySelectorAll('#durPicker .dur-option').forEach(o => {
+        o.classList.toggle('selected', parseInt(o.dataset.dur) === 60);
+    });
+    document.querySelectorAll('#priorityPicker .priority-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.priority === 'medium');
+    });
+    document.getElementById('dueDateInput').value = '';
+    
+    // Reset routine UI
+    document.querySelector('.routine-toggle').classList.remove('active');
+    document.getElementById('routineToggleText').textContent = 'Off';
+    document.getElementById('routineSettings').style.display = 'none';
+    document.querySelectorAll('.routine-day').forEach(d => d.classList.remove('selected'));
+    document.getElementById('routineTimeSelect').value = '540';
+    
+    // Populate task name suggestions
+    populateTaskSuggestions();
+    
+    // Render quick routines
+    renderQuickRoutines();
+    
+    document.getElementById('addTaskOverlay').classList.add('show');
+    document.getElementById('addTaskSheet').classList.add('show');
+    
+    setTimeout(() => document.getElementById('taskNameInput').focus(), 300);
+}
+
+function populateTaskSuggestions() {
+    const datalist = document.getElementById('taskNameSuggestions');
+    
+    // Get unique task names from history (most recent first)
+    const historyNames = new Map();
+    [...completedHistory].reverse().forEach(h => {
+        if (!historyNames.has(h.name.toLowerCase())) {
+            historyNames.set(h.name.toLowerCase(), h.name);
+        }
+    });
+    
+    // Get unique task names from current tasks
+    tasks.forEach(t => {
+        if (!historyNames.has(t.name.toLowerCase())) {
+            historyNames.set(t.name.toLowerCase(), t.name);
+        }
+    });
+    
+    // Common task suggestions
+    const commonTasks = [
+        'Email Check', 'Code Review', 'Meeting Notes', 'Weekly Report',
+        'Bug Fix', 'Feature Development', 'Documentation', 'Research',
+        'Planning', 'Design Review', '1:1 Meeting', 'Team Sync',
+        'Client Call', 'Presentation Prep', 'Data Analysis'
+    ];
+    
+    commonTasks.forEach(name => {
+        if (!historyNames.has(name.toLowerCase())) {
+            historyNames.set(name.toLowerCase(), name);
+        }
+    });
+    
+    // Build datalist options (limit to 20)
+    const suggestions = Array.from(historyNames.values()).slice(0, 20);
+    datalist.innerHTML = suggestions.map(name => `<option value="${esc(name)}">`).join('');
+}
+
+function closeAddTask() {
+    document.getElementById('addTaskOverlay').classList.remove('show');
+    document.getElementById('addTaskSheet').classList.remove('show');
+}
+
+// Default Quick Routine templates
+const defaultQuickRoutines = {
+    slot1: { icon: '📄', label: 'GMP Review', name: 'GMP Doc Review', category: 'work', duration: 15, priority: 'medium', routine: { day: 'daily', time: 540 } },
+    slot2: { icon: '💬', label: 'Comm', name: 'People Communication', category: 'meeting', duration: 30, priority: 'medium', routine: { day: 'daily', time: 600 } },
+    slot3: { icon: '📧', label: 'Email', name: 'Email Writing', category: 'work', duration: 15, priority: 'low', routine: { day: 'daily', time: 840 } },
+    slot4: { icon: '🤝', label: 'Meeting', name: 'Meeting', category: 'meeting', duration: 30, priority: 'medium', routine: { day: 'weekdays', time: 570 } },
+    slot5: { icon: '🧘', label: 'Stretch', name: 'Stretch Break', category: 'health', duration: 5, priority: 'medium', routine: { day: 'daily', time: 660 } }
+};
+
+// Load custom routines from localStorage or use defaults
+let quickRoutineTemplates = {};
+function loadQuickRoutines() {
+    try {
+        const saved = localStorage.getItem('em_quick_routines');
+        if (saved) {
+            quickRoutineTemplates = JSON.parse(saved);
+        } else {
+            quickRoutineTemplates = JSON.parse(JSON.stringify(defaultQuickRoutines));
+        }
+    } catch(e) {
+        quickRoutineTemplates = JSON.parse(JSON.stringify(defaultQuickRoutines));
+    }
+}
+
+function saveQuickRoutines() {
+    localStorage.setItem('em_quick_routines', JSON.stringify(quickRoutineTemplates));
+}
+
+function renderQuickRoutines() {
+    const container = document.getElementById('quickRoutinesList');
+    if (!container) return;
+    
+    let html = '';
+    ['slot1', 'slot2', 'slot3', 'slot4', 'slot5'].forEach(slotId => {
+        const t = quickRoutineTemplates[slotId];
+        if (t) {
+            html += `<div class="quick-routine-btn" 
+                data-slot="${slotId}"
+                onclick="applyQuickRoutine('${slotId}')"
+                oncontextmenu="event.preventDefault(); openEditRoutine('${slotId}')"
+                ontouchstart="startRoutineHold('${slotId}', event)"
+                ontouchend="endRoutineHold()"
+                ontouchmove="endRoutineHold()"
+            >${t.icon} ${t.label}</div>`;
+        }
+    });
+    container.innerHTML = html;
+}
+
+let routineHoldTimer = null;
+let routineHoldSlot = null;
+
+function startRoutineHold(slotId, event) {
+    routineHoldSlot = slotId;
+    routineHoldTimer = setTimeout(() => {
+        event.preventDefault();
+        openEditRoutine(slotId);
+        routineHoldTimer = null;
+    }, 500); // 500ms hold
+}
+
+function endRoutineHold() {
+    if (routineHoldTimer) {
+        clearTimeout(routineHoldTimer);
+        routineHoldTimer = null;
+    }
+}
+
+let editingRoutineSlot = null;
+
+function openEditRoutine(slotId) {
+    endRoutineHold();
+    editingRoutineSlot = slotId;
+    const t = quickRoutineTemplates[slotId];
+    if (!t) return;
+    
+    document.getElementById('editRoutineIcon').value = t.icon || '📋';
+    document.getElementById('editRoutineLabel').value = t.label || '';
+    document.getElementById('editRoutineName').value = t.name || '';
+    document.getElementById('editRoutineCat').value = t.category || 'work';
+    document.getElementById('editRoutineDur').value = t.duration || 30;
+    
+    document.getElementById('editRoutineOverlay').classList.add('show');
+    document.getElementById('editRoutineModal').classList.add('show');
+}
+
+function closeEditRoutine() {
+    document.getElementById('editRoutineOverlay').classList.remove('show');
+    document.getElementById('editRoutineModal').classList.remove('show');
+    editingRoutineSlot = null;
+}
+
+function saveRoutineEdit() {
+    if (!editingRoutineSlot) return;
+    
+    const icon = document.getElementById('editRoutineIcon').value.trim() || '📋';
+    const label = document.getElementById('editRoutineLabel').value.trim();
+    const name = document.getElementById('editRoutineName').value.trim();
+    const category = document.getElementById('editRoutineCat').value;
+    const duration = parseInt(document.getElementById('editRoutineDur').value) || 30;
+    
+    if (!label) {
+        showToast('Please enter a button label');
+        return;
+    }
+    if (!name) {
+        showToast('Please enter a task name');
+        return;
+    }
+    
+    // Update template
+    quickRoutineTemplates[editingRoutineSlot] = {
+        ...quickRoutineTemplates[editingRoutineSlot],
+        icon,
+        label,
+        name,
+        category,
+        duration,
+        priority: category === 'health' ? 'medium' : (quickRoutineTemplates[editingRoutineSlot].priority || 'medium')
+    };
+    
+    saveQuickRoutines();
+    renderQuickRoutines();
+    closeEditRoutine();
+    showToast('Quick Routine updated!');
+}
+
+function resetRoutineToDefault() {
+    if (!editingRoutineSlot) return;
+    
+    const defaultT = defaultQuickRoutines[editingRoutineSlot];
+    if (defaultT) {
+        quickRoutineTemplates[editingRoutineSlot] = JSON.parse(JSON.stringify(defaultT));
+        saveQuickRoutines();
+        renderQuickRoutines();
+        closeEditRoutine();
+        showToast('Reset to default');
+    }
+}
+
+function applyQuickRoutine(templateId) {
+    const template = quickRoutineTemplates[templateId];
+    if (!template) return;
+    
+    // Fill in the form
+    document.getElementById('taskNameInput').value = template.name;
+    selectCat(template.category);
+    selectDur(template.duration);
+    selectPriority(template.priority);
+    
+    // Enable and configure routine
+    if (template.routine) {
+        selectedRoutine = { ...template.routine };
+        document.querySelector('.routine-toggle').classList.add('active');
+        document.getElementById('routineToggleText').textContent = 'On';
+        document.getElementById('routineSettings').style.display = 'block';
+        
+        // Select the day
+        document.querySelectorAll('.routine-day').forEach(d => {
+            d.classList.toggle('selected', d.dataset.day === template.routine.day);
+        });
+        
+        // Set the time
+        document.getElementById('routineTimeSelect').value = template.routine.time;
+    }
+    
+    showToast('Template applied - adjust time if needed');
+}
+
+function selectCat(cat) {
+    selectedCat = cat;
+    document.querySelectorAll('#catPicker .cat-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.cat === cat);
+    });
+}
+
+function selectDur(dur) {
+    selectedDur = dur;
+    document.querySelectorAll('#durPicker .dur-option').forEach(o => {
+        o.classList.toggle('selected', parseInt(o.dataset.dur) === dur);
+    });
+}
+
+function selectPriority(priority) {
+    selectedPriority = priority;
+    document.querySelectorAll('#priorityPicker .priority-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.priority === priority);
+    });
+}
+
+function selectDueDate(dateStr) {
+    selectedDueDate = dateStr || null;
+}
+
+function setDueShortcut(shortcut) {
+    const today = new Date();
+    let date = null;
+    
+    if (shortcut === 'today') {
+        date = today;
+    } else if (shortcut === 'tomorrow') {
+        date = new Date(today);
+        date.setDate(date.getDate() + 1);
+    } else if (shortcut === 'week') {
+        // End of this week (Sunday)
+        date = new Date(today);
+        const daysUntilSunday = 7 - today.getDay();
+        date.setDate(date.getDate() + (daysUntilSunday === 7 ? 0 : daysUntilSunday));
+    } else {
+        date = null;
+    }
+    
+    if (date) {
+        const dateStr = date.toISOString().split('T')[0];
+        document.getElementById('dueDateInput').value = dateStr;
+        selectedDueDate = dateStr;
+    } else {
+        document.getElementById('dueDateInput').value = '';
+        selectedDueDate = null;
+    }
+}
+
+function toggleRoutine() {
+    const toggle = document.querySelector('.routine-toggle');
+    const settings = document.getElementById('routineSettings');
+    const text = document.getElementById('routineToggleText');
+    
+    if (toggle.classList.contains('active')) {
+        toggle.classList.remove('active');
+        settings.style.display = 'none';
+        text.textContent = 'Off';
+        selectedRoutine = null;
+    } else {
+        toggle.classList.add('active');
+        settings.style.display = 'block';
+        text.textContent = 'On';
+        // Default to daily at 9am
+        selectedRoutine = { day: 'daily', time: 540 };
+        document.querySelector('.routine-day[data-day="daily"]').classList.add('selected');
+    }
+}
+
+function selectRoutineDay(day) {
+    document.querySelectorAll('.routine-day').forEach(d => d.classList.remove('selected'));
+    document.querySelector(`.routine-day[data-day="${day}"]`).classList.add('selected');
+    if (selectedRoutine) {
+        selectedRoutine.day = day;
+    } else {
+        selectedRoutine = { day, time: 540 };
+    }
+}
+
+function selectRoutineTime(time) {
+    if (selectedRoutine) {
+        selectedRoutine.time = parseInt(time);
+    } else {
+        selectedRoutine = { day: 'daily', time: parseInt(time) };
+    }
+}
+
+function confirmAddTask() {
+    const name = document.getElementById('taskNameInput').value.trim();
+    if (!name) {
+        showToast('Please enter a task name');
+        return;
+    }
+    
+    const task = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        name,
+        category: selectedCat,
+        priority: selectedPriority,
+        duration: selectedDur,
+        dueDate: selectedDueDate,
+        routine: selectedRoutine,
+        createdAt: new Date().toISOString()
+    };
+    
+    tasks.push(task);
+    
+    // If routine is set, auto-schedule for today if applicable
+    if (selectedRoutine) {
+        autoScheduleRoutineTask(task);
+    }
+    
+    saveData();
+    renderTasks();
+    renderTimeGrid();
+    closeAddTask();
+    showToast(selectedRoutine ? 'Routine task added!' : 'Task added!');
+}
+
+function autoScheduleRoutineTask(task) {
+    if (!task.routine) return;
+    
+    const today = new Date();
+    const todayKey = formatDateKey(today);
+    const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ...
+    
+    // Check if task should be scheduled today
+    const dayMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+    const routine = task.routine;
+    let shouldSchedule = false;
+    
+    if (routine.day === 'daily') {
+        shouldSchedule = true;
+    } else if (routine.day === 'weekdays') {
+        shouldSchedule = dayOfWeek >= 1 && dayOfWeek <= 5;
+    } else if (dayMap[routine.day] === dayOfWeek) {
+        shouldSchedule = true;
+    }
+    
+    if (!shouldSchedule) return;
+    
+    // Check if already scheduled today
+    const alreadyScheduled = events.some(e => 
+        e.taskId === task.id && e.date === todayKey && !e.completed
+    );
+    if (alreadyScheduled) return;
+    
+    // Check for overlap
+    const startTime = routine.time;
+    const endTime = startTime + task.duration;
+    if (hasEventOverlap(startTime, endTime, todayKey, null)) {
+        // Find next available slot
+        return;
+    }
+    
+    // Create the event
+    const event = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        taskId: task.id,
+        name: task.name,
+        category: task.category,
+        date: todayKey,
+        start: startTime,
+        end: endTime,
+        estimatedDuration: task.duration,
+        completed: false,
+        isRoutine: true
+    };
+    
+    events.push(event);
+}
+
+function processAllRoutineTasks() {
+    // Run on app load to schedule all routine tasks for today
+    tasks.forEach(task => {
+        if (task.routine) {
+            autoScheduleRoutineTask(task);
+        }
+    });
+    saveData();
+    renderTimeGrid();
+}
+
+let selectedSubtaskId = null; // Track which subtask is being scheduled
+
+function openTaskDetail(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    selectedTaskId = taskId;
+    selectedTime = null;
+    selectedSubtaskId = null;
+    
+    document.getElementById('taskDetailTitle').textContent = task.name;
+    
+    // Initialize subtasks array if not exists
+    if (!task.subtasks) task.subtasks = [];
+    
+    // Render subtasks
+    renderSubtasksList(task);
+    
+    // Render schedule what options (if has subtasks)
+    renderScheduleWhat(task);
+    
+    // Generate time options
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const isToday = formatDateKey(currentDate) === formatDateKey(now);
+    const dateKey = formatDateKey(currentDate);
+    
+    // Get taken time slots for this date
+    const todayEvents = events.filter(e => e.date === dateKey);
+    
+    let startMins, endMins;
+    
+    if (isToday) {
+        // Start from now or WORK_START, whichever is later
+        startMins = Math.max(WORK_START * 60, Math.ceil(currentMins / 30) * 30);
+        endMins = WORK_END * 60; // Cap at 11pm
+    } else {
+        startMins = WORK_START * 60;
+        endMins = WORK_END * 60;
+    }
+    
+    let timeHtml = '<div class="time-picker-scroll">';
+    for (let m = startMins; m < endMins; m += 30) {
+        // Check if this slot overlaps with any existing event
+        const isTaken = todayEvents.some(e => m < e.end && (m + 30) > e.start);
+        const takenClass = isTaken ? ' taken' : '';
+        timeHtml += `<div class="dur-option${takenClass}" data-time="${m}" onclick="${isTaken ? '' : `selectTime(${m})`}">${formatTime(m)}${isTaken ? ' ●' : ''}</div>`;
+    }
+    timeHtml += '</div>';
+    
+    if (startMins >= endMins) {
+        timeHtml = '<div style="padding:12px;color:#86868b;text-align:center;">No time slots available today. Try tomorrow!</div>';
+    }
+    
+    document.getElementById('timePicker').innerHTML = timeHtml;
+    
+    document.getElementById('taskDetailOverlay').classList.add('show');
+    document.getElementById('taskDetailSheet').classList.add('show');
+}
+
+function renderSubtasksList(task) {
+    const container = document.getElementById('subtasksList');
+    const subtasks = task.subtasks || [];
+    
+    // Calculate total duration
+    const totalDur = subtasks.length > 0 
+        ? subtasks.reduce((sum, s) => sum + (s.duration || 30), 0)
+        : task.duration;
+    
+    document.getElementById('subtaskTotal').textContent = `· ${formatDuration(totalDur)} total`;
+    
+    if (subtasks.length === 0) {
+        container.innerHTML = '<div style="padding:8px 0;color:#86868b;font-size:13px;">No subtasks yet. Add one below!</div>';
+    } else {
+        container.innerHTML = subtasks.map((s, idx) => {
+            const isDone = s.done;
+            const isScheduled = s.scheduled;
+            return `
+                <div class="subtask-item ${isDone ? 'done' : ''} ${isScheduled ? 'scheduled' : ''}" data-idx="${idx}">
+                    <div class="subtask-check" onclick="toggleSubtask(${idx})">${isDone ? '✓' : ''}</div>
+                    <div class="subtask-name" onclick="editSubtask(${idx})">${esc(s.name)}</div>
+                    <div class="subtask-dur" onclick="editSubtask(${idx})">${formatDuration(s.duration || 30)}</div>
+                    <div class="subtask-edit" onclick="editSubtask(${idx})">✏️</div>
+                    <div class="subtask-del" onclick="deleteSubtask(${idx})">×</div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function renderScheduleWhat(task) {
+    const section = document.getElementById('scheduleWhatSection');
+    const container = document.getElementById('scheduleWhatList');
+    const subtasks = task.subtasks || [];
+    
+    if (subtasks.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    section.style.display = 'block';
+    
+    // Calculate total duration for parent
+    const totalDur = subtasks.reduce((sum, s) => sum + (s.duration || 30), 0);
+    
+    let html = `
+        <div class="subtask-select-item parent ${!selectedSubtaskId ? 'selected' : ''}" onclick="selectScheduleWhat(null)">
+            <span class="subtask-select-icon">📁</span>
+            <span class="subtask-select-name">Entire project</span>
+            <span class="subtask-select-dur">${formatDuration(totalDur)}</span>
+        </div>
+    `;
+    
+    subtasks.forEach((s, idx) => {
+        const isDone = s.done;
+        const isScheduled = s.scheduled;
+        const icon = isDone ? '✓' : isScheduled ? '📅' : '○';
+        html += `
+            <div class="subtask-select-item ${selectedSubtaskId === idx ? 'selected' : ''} ${isDone ? 'done' : ''}" 
+                 onclick="selectScheduleWhat(${idx})">
+                <span class="subtask-select-icon">${icon}</span>
+                <span class="subtask-select-name">${esc(s.name)}</span>
+                <span class="subtask-select-dur">${formatDuration(s.duration || 30)}</span>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function selectScheduleWhat(subtaskIdx) {
+    selectedSubtaskId = subtaskIdx;
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (task) renderScheduleWhat(task);
+}
+
+function selectSubtaskForSchedule(idx) {
+    selectedSubtaskId = idx;
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (task) renderScheduleWhat(task);
+}
+
+function onSubtaskDurChange() {
+    const select = document.getElementById('newSubtaskDur');
+    const customInput = document.getElementById('newSubtaskDurCustom');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+    }
+}
+
+function addSubtask() {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    const nameInput = document.getElementById('newSubtaskName');
+    const durSelect = document.getElementById('newSubtaskDur');
+    const customInput = document.getElementById('newSubtaskDurCustom');
+    
+    const name = nameInput.value.trim();
+    if (!name) {
+        showToast('Enter subtask name');
+        return;
+    }
+    
+    // Get duration - custom (in hours) or from select (in minutes)
+    let duration;
+    if (durSelect.value === 'custom') {
+        const hours = parseFloat(customInput.value);
+        if (!hours || hours < 0.25) {
+            showToast('Enter valid duration (min 0.25h)');
+            return;
+        }
+        if (hours > 8) {
+            showToast('Max 8 hours');
+            return;
+        }
+        duration = Math.round(hours * 60); // Convert hours to minutes
+    } else {
+        duration = parseInt(durSelect.value);
+    }
+    
+    if (!task.subtasks) task.subtasks = [];
+    
+    task.subtasks.push({
+        id: Date.now().toString(36),
+        name: name,
+        duration: duration,
+        done: false,
+        scheduled: false
+    });
+    
+    saveData();
+    renderSubtasksList(task);
+    renderScheduleWhat(task);
+    renderTasks();
+    
+    // Reset inputs
+    nameInput.value = '';
+    durSelect.value = '30';
+    customInput.value = '';
+    customInput.style.display = 'none';
+    
+    showToast('Subtask added');
+}
+
+function toggleSubtask(idx) {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task || !task.subtasks || !task.subtasks[idx]) return;
+    
+    task.subtasks[idx].done = !task.subtasks[idx].done;
+    saveData();
+    renderSubtasksList(task);
+    renderScheduleWhat(task);
+    renderTasks();
+}
+
+function deleteSubtask(idx) {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task || !task.subtasks) return;
+    
+    task.subtasks.splice(idx, 1);
+    saveData();
+    renderSubtasksList(task);
+    renderScheduleWhat(task);
+    renderTasks();
+    showToast('Subtask deleted');
+}
+
+let editingSubtaskIdx = null;
+
+function editSubtask(idx) {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task || !task.subtasks || !task.subtasks[idx]) return;
+    
+    const subtask = task.subtasks[idx];
+    editingSubtaskIdx = idx;
+    
+    // Show edit modal
+    document.getElementById('editSubtaskName').value = subtask.name;
+    document.getElementById('editSubtaskDur').value = subtask.duration || 30;
+    document.getElementById('editSubtaskOverlay').classList.add('show');
+    document.getElementById('editSubtaskModal').classList.add('show');
+    document.getElementById('editSubtaskName').focus();
+}
+
+function saveSubtaskEdit() {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task || !task.subtasks || editingSubtaskIdx === null) return;
+    
+    const newName = document.getElementById('editSubtaskName').value.trim();
+    const newDur = parseInt(document.getElementById('editSubtaskDur').value) || 30;
+    
+    if (newName) {
+        task.subtasks[editingSubtaskIdx].name = newName;
+        task.subtasks[editingSubtaskIdx].duration = newDur;
+        saveData();
+        renderSubtasksList(task);
+        renderScheduleWhat(task);
+        renderTasks();
+    }
+    
+    closeEditSubtask();
+}
+
+function closeEditSubtask() {
+    document.getElementById('editSubtaskOverlay').classList.remove('show');
+    document.getElementById('editSubtaskModal').classList.remove('show');
+    editingSubtaskIdx = null;
+}
+
+function closeTaskDetail() {
+    document.getElementById('taskDetailOverlay').classList.remove('show');
+    document.getElementById('taskDetailSheet').classList.remove('show');
+    document.getElementById('newSubtaskName').value = '';
+    document.getElementById('newSubtaskDur').value = '30';
+    document.getElementById('newSubtaskDurCustom').value = '';
+    document.getElementById('newSubtaskDurCustom').style.display = 'none';
+    // Reset task name edit state
+    document.getElementById('taskNameEditInput').style.display = 'none';
+    document.querySelector('.sheet-title-row').style.display = 'flex';
+    selectedTaskId = null;
+    selectedSubtaskId = null;
+}
+
+function selectTime(mins) {
+    selectedTime = mins;
+    document.querySelectorAll('#timePicker .dur-option').forEach(o => {
+        o.classList.toggle('selected', parseInt(o.dataset.time) === mins);
+    });
+}
+
+function scheduleTask() {
+    if (!selectedTaskId || selectedTime === null) {
+        showToast('Please select a time');
+        return;
+    }
+    
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    let eventName, eventDuration, subtaskId = null;
+    
+    if (selectedSubtaskId !== null && task.subtasks && task.subtasks[selectedSubtaskId]) {
+        // Schedule specific subtask
+        const subtask = task.subtasks[selectedSubtaskId];
+        eventName = `${task.name}: ${subtask.name}`;
+        eventDuration = subtask.duration || 30;
+        subtaskId = selectedSubtaskId;
+    } else if (task.subtasks && task.subtasks.length > 0) {
+        // Schedule entire project (sum of subtasks)
+        eventName = task.name;
+        eventDuration = task.subtasks.reduce((sum, s) => sum + (s.duration || 30), 0);
+    } else {
+        // No subtasks, schedule the task itself
+        eventName = task.name;
+        eventDuration = task.duration;
+    }
+    
+    const dateKey = formatDateKey(currentDate);
+    const startTime = selectedTime;
+    const endTime = selectedTime + eventDuration;
+    
+    // Check for overlap before scheduling
+    if (hasEventOverlap(startTime, endTime, dateKey, null)) {
+        showToast('Time slot has conflict!');
+        return;
+    }
+    
+    // Mark subtask as scheduled if applicable
+    if (subtaskId !== null && task.subtasks && task.subtasks[subtaskId]) {
+        task.subtasks[subtaskId].scheduled = true;
+    }
+    
+    const event = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        taskId: task.id,
+        subtaskId: subtaskId,
+        name: eventName,
+        category: task.category,
+        priority: task.priority,
+        date: dateKey,
+        start: startTime,
+        end: endTime,
+        estimatedDuration: eventDuration,
+        actualDuration: null,
+        completed: false,
+        createdAt: new Date().toISOString()
+    };
+    
+    events.push(event);
+    saveData();
+    renderTasks();
+    closeTaskDetail();
+    showToast('Scheduled!');
+    
+    switchTab('tabToday');
+}
+
+function editTaskName() {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    document.querySelector('.sheet-title-row').style.display = 'none';
+    const input = document.getElementById('taskNameEditInput');
+    input.value = task.name;
+    input.style.display = 'block';
+    input.focus();
+    input.select();
+}
+
+function saveTaskName() {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    const input = document.getElementById('taskNameEditInput');
+    const newName = input.value.trim();
+    
+    if (newName && newName !== task.name) {
+        task.name = newName;
+        saveData();
+        renderTasks();
+    }
+    
+    input.style.display = 'none';
+    document.querySelector('.sheet-title-row').style.display = 'flex';
+    document.getElementById('taskDetailTitle').textContent = task.name;
+}
+
+function deleteTask() {
+    if (!selectedTaskId) return;
+    
+    const idx = tasks.findIndex(t => t.id === selectedTaskId);
+    if (idx !== -1) tasks.splice(idx, 1);
+    
+    saveData();
+    renderTasks();
+    closeTaskDetail();
+    showToast('Task deleted');
+}
+
+// ══════════════════════════════════════
+// TODAY TAB (Calendar)
+// ══════════════════════════════════════
+function navDay(delta) {
+    currentDate.setDate(currentDate.getDate() + delta);
+    document.getElementById('todayDate').textContent = formatDateDisplay(currentDate);
+    document.getElementById('headerSubtitle').textContent = formatDateDisplay(currentDate);
+    renderTimeGrid();
+}
+
+function navToday() {
+    currentDate = new Date();
+    document.getElementById('todayDate').textContent = formatDateDisplay(currentDate);
+    document.getElementById('headerSubtitle').textContent = formatDateDisplay(currentDate);
+    renderTimeGrid();
+}
+
+function renderTimeGrid() {
+    const container = document.getElementById('timeGrid');
+    const dateKey = formatDateKey(currentDate);
+    const todayEvents = events.filter(e => e.date === dateKey);
+    
+    // Get routine previews for this date
+    const routinePreviews = getRoutinePreviewsForDate(currentDate, dateKey);
+    
+    const now = new Date();
+    const isToday = formatDateKey(currentDate) === formatDateKey(now);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    
+    // Determine grid end time - extend if there are late events or if it's late now
+    let gridEnd = WORK_END;
+    todayEvents.forEach(e => {
+        const eventEndHour = Math.ceil(e.end / 60);
+        if (eventEndHour > gridEnd) gridEnd = eventEndHour;
+    });
+    routinePreviews.forEach(r => {
+        const endHour = Math.ceil((r.time + r.duration) / 60);
+        if (endHour > gridEnd) gridEnd = endHour;
+    });
+    if (isToday && now.getHours() >= WORK_END) {
+        gridEnd = Math.min(24, now.getHours() + 2);
+    }
+    
+    let html = '';
+    
+    for (let h = WORK_START; h < gridEnd; h++) {
+        const slotStart = h * 60;
+        const isLunch = h === 12;
+        html += `
+            <div class="time-slot${isLunch ? ' lunch' : ''}" data-hour="${h}">
+                <div class="time-label">${h === 0 ? '12' : (h > 12 ? h-12 : h)} ${h >= 12 ? 'PM' : 'AM'}${isLunch ? ' 🍽' : ''}</div>
+                <div class="time-content" data-start="${slotStart}">
+        `;
+        
+        // Render events in this hour
+        todayEvents.forEach(e => {
+            if (e.start >= slotStart && e.start < slotStart + 60) {
+                const topOffset = ((e.start - slotStart) / 60) * 60;
+                const duration = e.end - e.start; // in minutes
+                const height = Math.max(24, duration); // 1 minute = 1px
+                const zIndex = Math.floor(e.start / 30); // Later events on top
+                const priorityDot = e.priority && e.priority !== 'medium' 
+                    ? `<span style="color:${e.priority === 'high' ? '#ff3b30' : '#34c759'};">●</span> ` 
+                    : '';
+                
+                // Check timer status
+                const isTimerRunning = !!e.startedAt && !e.completed;
+                let actionBtn = '';
+                let trackingHtml = '';
+                let eventClick = '';
+                
+                if (e.completed) {
+                    // Completed - show checkmark, click opens detail
+                    actionBtn = `<div class="event-action done">✓</div>`;
+                    eventClick = `onclick="openEventDetail('${e.id}')"`;
+                } else if (isTimerRunning) {
+                    // Timer running - show elapsed time, click to complete
+                    const startTime = new Date(e.startedAt);
+                    const elapsedMins = Math.round((new Date() - startTime) / 60000);
+                    actionBtn = `<div class="event-action timing" onclick="event.stopPropagation(); quickComplete('${e.id}')">⏱</div>`;
+                    trackingHtml = `<div class="event-tracking timer-active">${formatDuration(elapsedMins)}</div>`;
+                    eventClick = `onclick="quickComplete('${e.id}')"`;
+                } else {
+                    // Not started - show play button
+                    actionBtn = `<div class="event-action play" onclick="event.stopPropagation(); quickStart('${e.id}')">▶</div>`;
+                    eventClick = `onclick="openEventDetail('${e.id}')"`;
+                }
+                
+                const timerClass = isTimerRunning ? ' timer-running' : '';
+                
+                // Unified compact format for all events
+                const metaContent = `<div class="event-time">${formatTime(e.start)}-${formatTime(e.end)}</div>${trackingHtml}`;
+                
+                html += `
+                    <div class="event ${e.category}${e.completed ? ' completed' : ''}${timerClass}" 
+                         style="top:${topOffset}px; height:${height}px; z-index:${zIndex};"
+                         ${eventClick}>
+                        ${actionBtn}
+                        <div class="event-content">
+                            <div class="event-name">${priorityDot}${esc(e.name)}</div>
+                            <div class="event-meta">
+                                ${metaContent}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        // Render routine previews in this hour
+        routinePreviews.forEach(r => {
+            if (r.time >= slotStart && r.time < slotStart + 60) {
+                const topOffset = ((r.time - slotStart) / 60) * 60;
+                const height = Math.max(20, (r.duration / 60) * 60);
+                
+                html += `
+                    <div class="event routine-preview ${r.category}" 
+                         style="top:${topOffset}px; height:${height}px;"
+                         onclick="confirmRoutinePreview('${r.taskId}', '${dateKey}')">
+                        <div class="event-content" style="flex:1;">
+                            <div class="event-name">🔁 ${esc(r.name)}</div>
+                            <div class="event-meta">
+                                <div class="event-time">${formatTime(r.time)} - ${formatTime(r.time + r.duration)}</div>
+                                <div class="event-tracking">Tap to schedule</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div></div>';
+    }
+    
+    // Now line
+    if (isToday && nowMins >= WORK_START * 60 && nowMins < gridEnd * 60) {
+        const topPos = ((nowMins - WORK_START * 60) / 60) * 60;
+        html += `<div class="now-line" style="top:${topPos}px;"></div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function getRoutinePreviewsForDate(date, dateKey) {
+    const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ...
+    const dayMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+    const previews = [];
+    
+    tasks.forEach(task => {
+        if (!task.routine) return;
+        
+        // Check if already scheduled for this date
+        const alreadyScheduled = events.some(e => 
+            e.taskId === task.id && e.date === dateKey && !e.completed
+        );
+        if (alreadyScheduled) return;
+        
+        // Check if routine applies to this day
+        const routine = task.routine;
+        let shouldShow = false;
+        
+        if (routine.day === 'daily') {
+            shouldShow = true;
+        } else if (routine.day === 'weekdays') {
+            shouldShow = dayOfWeek >= 1 && dayOfWeek <= 5;
+        } else if (dayMap[routine.day] === dayOfWeek) {
+            shouldShow = true;
+        }
+        
+        if (shouldShow) {
+            previews.push({
+                taskId: task.id,
+                name: task.name,
+                category: task.category,
+                time: routine.time,
+                duration: task.duration,
+                priority: task.priority
+            });
+        }
+    });
+    
+    return previews;
+}
+
+function confirmRoutinePreview(taskId, dateKey) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.routine) return;
+    
+    const startTime = task.routine.time;
+    const endTime = startTime + task.duration;
+    
+    // Check for overlap
+    if (hasEventOverlap(startTime, endTime, dateKey, null)) {
+        showToast('Time slot has conflict');
+        return;
+    }
+    
+    // Create the event
+    const event = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        taskId: task.id,
+        name: task.name,
+        category: task.category,
+        priority: task.priority,
+        date: dateKey,
+        start: startTime,
+        end: endTime,
+        estimatedDuration: task.duration,
+        completed: false,
+        isRoutine: true
+    };
+    
+    events.push(event);
+    saveData();
+    renderTimeGrid();
+    showToast('Routine scheduled!');
+}
+
+function openEventDetail(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    
+    selectedEventId = eventId;
+    
+    document.getElementById('eventDetailTitle').textContent = event.name;
+    
+    const now = new Date();
+    const isToday = event.date === formatDateKey(now);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    
+    // Check timer state
+    const isTimerRunning = !!event.startedAt;
+    const timerBtn = document.getElementById('eventTimerBtn');
+    
+    // Calculate elapsed time
+    let elapsed;
+    if (event.completed) {
+        elapsed = event.actualDuration || event.estimatedDuration;
+        timerBtn.style.display = 'none';
+    } else if (isTimerRunning) {
+        const startTime = new Date(event.startedAt);
+        elapsed = Math.round((now - startTime) / 60000);
+        timerBtn.innerHTML = '⏸ Stop';
+        timerBtn.classList.add('running');
+        timerBtn.style.display = 'block';
+    } else {
+        elapsed = 0;
+        timerBtn.innerHTML = '▶ Start';
+        timerBtn.classList.remove('running');
+        timerBtn.style.display = 'block';
+    }
+    
+    const diff = elapsed - event.estimatedDuration;
+    
+    document.getElementById('eventEstimate').textContent = formatDuration(event.estimatedDuration);
+    document.getElementById('eventElapsed').textContent = formatDuration(elapsed);
+    
+    const diffEl = document.getElementById('eventDiff');
+    diffEl.textContent = (diff >= 0 ? '+' : '') + formatDuration(Math.abs(diff));
+    diffEl.className = 'event-stat-value ' + (diff < 0 ? 'positive' : (diff > 0 ? 'negative' : ''));
+    
+    // Load notes
+    document.getElementById('eventNotesInput').value = event.notes || '';
+    
+    // Reset method selector (default to manual, or load saved methods)
+    selectedMethods.clear();
+    const savedMethods = event.methods || (event.method ? [event.method] : ['manual']);
+    savedMethods.forEach(m => selectedMethods.add(m));
+    
+    document.querySelectorAll('#methodPicker .method-option').forEach(o => {
+        o.classList.toggle('selected', selectedMethods.has(o.dataset.method));
+    });
+    
+    // Show/hide other input
+    const otherInput = document.getElementById('methodOtherInput');
+    const otherText = document.getElementById('methodOtherText');
+    if (selectedMethods.has('other')) {
+        otherInput.style.display = 'flex';
+        otherText.value = event.otherMethod || '';
+    } else {
+        otherInput.style.display = 'none';
+        otherText.value = '';
+    }
+    
+    document.getElementById('eventDetailOverlay').classList.add('show');
+    document.getElementById('eventDetailSheet').classList.add('show');
+}
+
+function toggleEventTimer() {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+    
+    if (event.startedAt) {
+        // Stop timer - keep the startedAt but mark stopped time
+        event.stoppedAt = new Date().toISOString();
+    } else {
+        // Start timer
+        event.startedAt = new Date().toISOString();
+        delete event.stoppedAt;
+    }
+    
+    saveData();
+    renderTimeGrid();
+    openEventDetail(selectedEventId); // Refresh the modal
+    showToast(event.startedAt && !event.stoppedAt ? 'Timer started' : 'Timer stopped');
+}
+
+function toggleMethod(method) {
+    if (selectedMethods.has(method)) {
+        // Don't allow deselecting if it's the only one
+        if (selectedMethods.size > 1) {
+            selectedMethods.delete(method);
+        }
+    } else {
+        selectedMethods.add(method);
+    }
+    
+    // Update UI
+    document.querySelectorAll('#methodPicker .method-option').forEach(o => {
+        o.classList.toggle('selected', selectedMethods.has(o.dataset.method));
+    });
+    
+    // Show/hide other input
+    const otherInput = document.getElementById('methodOtherInput');
+    if (selectedMethods.has('other')) {
+        otherInput.style.display = 'flex';
+        document.getElementById('methodOtherText').focus();
+    } else {
+        otherInput.style.display = 'none';
+    }
+}
+
+function closeEventDetail() {
+    // Save notes before closing
+    if (selectedEventId) {
+        const event = events.find(e => e.id === selectedEventId);
+        if (event) {
+            const notes = document.getElementById('eventNotesInput').value.trim();
+            if (notes !== (event.notes || '')) {
+                event.notes = notes;
+                saveData();
+            }
+        }
+    }
+    
+    document.getElementById('eventDetailOverlay').classList.remove('show');
+    document.getElementById('eventDetailSheet').classList.remove('show');
+    document.getElementById('eventNotesInput').value = '';
+    document.getElementById('methodOtherInput').style.display = 'none';
+    document.getElementById('methodOtherText').value = '';
+    selectedEventId = null;
+    selectedMethods = new Set(['manual']);
+}
+
+function adjustEventTime(delta) {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event || event.completed) return;
+    
+    event.end = Math.max(event.start + 15, event.end + delta);
+    saveData();
+    renderTimeGrid();
+    
+    // Update display
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const elapsed = Math.min(nowMins - event.start, event.end - event.start);
+    const diff = elapsed - event.estimatedDuration;
+    
+    document.getElementById('eventElapsed').textContent = formatDuration(elapsed);
+    const diffEl = document.getElementById('eventDiff');
+    diffEl.textContent = (diff >= 0 ? '+' : '') + formatDuration(Math.abs(diff));
+    diffEl.className = 'event-stat-value ' + (diff < 0 ? 'positive' : (diff > 0 ? 'negative' : ''));
+}
+
+function completeEvent() {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+    
+    // Save notes and methods (multi-select)
+    const notes = document.getElementById('eventNotesInput').value.trim();
+    event.notes = notes;
+    event.methods = Array.from(selectedMethods);
+    
+    // Save custom "other" method name if selected
+    if (selectedMethods.has('other')) {
+        event.otherMethod = document.getElementById('methodOtherText').value.trim();
+    }
+    
+    const now = new Date();
+    
+    // Calculate actual duration - prefer timer if used
+    let actual;
+    if (event.startedAt) {
+        const startTime = new Date(event.startedAt);
+        actual = Math.round((now - startTime) / 60000);
+    } else {
+        // Fallback to schedule-based calculation
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        if (event.date === formatDateKey(now) && nowMins > event.start) {
+            actual = Math.min(nowMins - event.start, event.end - event.start);
+        } else {
+            actual = event.end - event.start;
+        }
+    }
+    
+    event.completed = true;
+    event.actualDuration = actual;
+    event.completedAt = new Date().toISOString();
+    
+    // Add to history with methods
+    completedHistory.push({
+        id: event.id,
+        name: event.name,
+        category: event.category,
+        date: event.date,
+        estimated: event.estimatedDuration,
+        actual: actual,
+        diff: actual - event.estimatedDuration,
+        completedAt: event.completedAt,
+        notes: notes,
+        methods: Array.from(selectedMethods),
+        otherMethod: event.otherMethod || ''
+    });
+    
+    // Remove task from task list
+    const taskIdx = tasks.findIndex(t => t.id === event.taskId);
+    if (taskIdx !== -1) tasks.splice(taskIdx, 1);
+    
+    saveData();
+    renderTimeGrid();
+    renderTasks();
+    
+    // Close without re-saving notes
+    document.getElementById('eventDetailOverlay').classList.remove('show');
+    document.getElementById('eventDetailSheet').classList.remove('show');
+    document.getElementById('eventNotesInput').value = '';
+    document.getElementById('methodOtherInput').style.display = 'none';
+    document.getElementById('methodOtherText').value = '';
+    selectedEventId = null;
+    selectedMethods = new Set(['manual']);
+    
+    const diff = actual - event.estimatedDuration;
+    if (Math.abs(diff) <= 5) {
+        showToast('Perfect! Right on time 🎯');
+    } else if (diff < 0) {
+        showToast(`Done ${formatDuration(Math.abs(diff))} early! 🚀`);
+    } else {
+        showToast(`Took ${formatDuration(diff)} longer than expected`);
+    }
+}
+
+function deleteEvent() {
+    if (!selectedEventId) return;
+    
+    const idx = events.findIndex(e => e.id === selectedEventId);
+    if (idx !== -1) events.splice(idx, 1);
+    
+    saveData();
+    renderTimeGrid();
+    renderTasks();
+    closeEventDetail();
+    showToast('Event deleted');
+}
+
+// ══════════════════════════════════════
+// ONE-CLICK TIMER
+// ══════════════════════════════════════
+function quickStart(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event || event.completed || event.startedAt) return;
+    
+    event.startedAt = new Date().toISOString();
+    saveData();
+    renderTimeGrid();
+    showToast('Timer started ⏱');
+}
+
+function quickComplete(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event || event.completed) return;
+    
+    // Show quick complete modal
+    selectedEventId = eventId;
+    
+    // Calculate elapsed time
+    let elapsedMins = 0;
+    if (event.startedAt) {
+        elapsedMins = Math.round((new Date() - new Date(event.startedAt)) / 60000);
+    }
+    
+    const diff = elapsedMins - event.estimatedDuration;
+    let diffText = '';
+    if (diff > 0) {
+        diffText = `<span style="color:#ff3b30">+${formatDuration(diff)}</span>`;
+    } else if (diff < 0) {
+        diffText = `<span style="color:#34c759">${formatDuration(diff)}</span>`;
+    } else {
+        diffText = `<span style="color:#007aff">Perfect!</span>`;
+    }
+    
+    document.getElementById('quickCompleteContent').innerHTML = `
+        <div class="quick-complete-header">${esc(event.name)}</div>
+        <div class="quick-complete-stats">
+            <div class="qc-stat">
+                <div class="qc-stat-value">${formatDuration(event.estimatedDuration)}</div>
+                <div class="qc-stat-label">Estimated</div>
+            </div>
+            <div class="qc-stat">
+                <div class="qc-stat-value">${formatDuration(elapsedMins)}</div>
+                <div class="qc-stat-label">Actual</div>
+            </div>
+            <div class="qc-stat">
+                <div class="qc-stat-value">${diffText}</div>
+                <div class="qc-stat-label">Diff</div>
+            </div>
+        </div>
+        <div class="quick-complete-methods">
+            <div class="section-label">${event.category === 'health' ? 'Health tasks don\'t need a tool' : 'How did you complete this?'}</div>
+            <div class="method-chips" id="qcMethodChips">
+                ${event.category === 'health' ? `
+                    <div class="method-chip selected" data-method="na" onclick="toggleQcMethod('na')">N/A</div>
+                ` : `
+                    <div class="method-chip selected" data-method="manual" onclick="toggleQcMethod('manual')">Manual</div>
+                    <div class="method-chip" data-method="claude" onclick="toggleQcMethod('claude')">Claude</div>
+                    <div class="method-chip" data-method="chatgpt" onclick="toggleQcMethod('chatgpt')">ChatGPT</div>
+                    <div class="method-chip" data-method="gemini" onclick="toggleQcMethod('gemini')">Gemini</div>
+                `}
+            </div>
+        </div>
+    `;
+    
+    // Reset method selection based on category
+    qcSelectedMethods = new Set([event.category === 'health' ? 'na' : 'manual']);
+    
+    document.getElementById('quickCompleteOverlay').classList.add('show');
+    document.getElementById('quickCompleteSheet').classList.add('show');
+}
+
+let qcSelectedMethods = new Set(['manual']);
+
+function toggleQcMethod(method) {
+    const chip = document.querySelector(`#qcMethodChips .method-chip[data-method="${method}"]`);
+    if (qcSelectedMethods.has(method)) {
+        qcSelectedMethods.delete(method);
+        chip.classList.remove('selected');
+    } else {
+        qcSelectedMethods.add(method);
+        chip.classList.add('selected');
+    }
+    // Ensure at least one method selected
+    if (qcSelectedMethods.size === 0) {
+        qcSelectedMethods.add('manual');
+        document.querySelector('#qcMethodChips .method-chip[data-method="manual"]').classList.add('selected');
+    }
+}
+
+function confirmQuickComplete() {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+    
+    const now = new Date();
+    
+    // Calculate actual duration
+    let actual;
+    if (event.startedAt) {
+        actual = Math.round((now - new Date(event.startedAt)) / 60000);
+    } else {
+        actual = event.estimatedDuration;
+    }
+    
+    event.completed = true;
+    event.actualDuration = actual;
+    event.completedAt = now.toISOString();
+    event.methods = Array.from(qcSelectedMethods);
+    
+    // Add to history
+    completedHistory.push({
+        id: event.id,
+        name: event.name,
+        category: event.category,
+        date: event.date,
+        estimated: event.estimatedDuration,
+        actual: actual,
+        diff: actual - event.estimatedDuration,
+        completedAt: event.completedAt,
+        notes: '',
+        methods: Array.from(qcSelectedMethods)
+    });
+    
+    // Remove task from task list
+    const taskIdx = tasks.findIndex(t => t.id === event.taskId);
+    if (taskIdx !== -1) tasks.splice(taskIdx, 1);
+    
+    saveData();
+    renderTimeGrid();
+    renderTasks();
+    closeQuickComplete();
+    
+    const diff = actual - event.estimatedDuration;
+    if (Math.abs(diff) <= 5) {
+        showToast('Perfect! 🎯');
+    } else if (diff < 0) {
+        showToast(`${formatDuration(Math.abs(diff))} early! 🚀`);
+    } else {
+        showToast(`+${formatDuration(diff)} over estimate`);
+    }
+}
+
+function closeQuickComplete() {
+    document.getElementById('quickCompleteOverlay').classList.remove('show');
+    document.getElementById('quickCompleteSheet').classList.remove('show');
+    selectedEventId = null;
+    qcSelectedMethods = new Set(['manual']);
+}
+
+// ══════════════════════════════════════
+// STATS TAB
+// ══════════════════════════════════════
+function renderStats() {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay()); // Sunday
+    const weekKey = formatDateKey(weekStart);
+    
+    const thisWeek = completedHistory.filter(h => h.date >= weekKey);
+    
+    // Separate AI vs Manual/N/A tasks
+    const aiTasks = [];
+    const manualTasks = [];
+    
+    completedHistory.forEach(h => {
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        // AI = any method that's not manual and not na
+        if (methods.some(m => m !== 'manual' && m !== 'na')) {
+            aiTasks.push(h);
+        } else {
+            manualTasks.push(h);
+        }
+    });
+    
+    // This week's AI vs Manual/N/A
+    const weekAiTasks = thisWeek.filter(h => {
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        return methods.some(m => m !== 'manual' && m !== 'na');
+    });
+    const weekManualTasks = thisWeek.filter(h => {
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        return !methods.some(m => m !== 'manual' && m !== 'na');
+    });
+    
+    // Render AI Hero with repeated task tracking
+    renderAiHero(aiTasks.length, manualTasks.length);
+    
+    // Time by category
+    renderCategoryTimeChart(thisWeek);
+    
+    // Summary stats (updated)
+    document.getElementById('statCompleted').textContent = thisWeek.length;
+    document.getElementById('statTotalTime').textContent = formatDuration(thisWeek.reduce((s, h) => s + h.actual, 0));
+    document.getElementById('statAiTasks').textContent = weekAiTasks.length;
+    document.getElementById('statManualTasks').textContent = weekManualTasks.length;
+    
+    // Completion methods
+    renderMethodStats();
+    
+    // Insights
+    renderInsights();
+    
+    // Weekly report
+    renderWeeklyReport();
+}
+
+function renderAiHero(totalAi, totalManual) {
+    const container = document.getElementById('aiHeroContent');
+    const total = totalAi + totalManual;
+    const aiPct = total > 0 ? Math.round((totalAi / total) * 100) : 0;
+    
+    // Find repeated tasks (same name appears >= 2 times)
+    const tasksByName = {};
+    completedHistory.forEach(h => {
+        const name = h.name.trim().toLowerCase();
+        if (!tasksByName[name]) {
+            tasksByName[name] = [];
+        }
+        tasksByName[name].push(h);
+    });
+    
+    // Filter to tasks with 2+ occurrences and sort by most recent
+    const repeatedTasks = Object.entries(tasksByName)
+        .filter(([name, records]) => records.length >= 2)
+        .map(([name, records]) => {
+            // Sort by date (oldest first)
+            records.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return (a.completedAt || '').localeCompare(b.completedAt || '');
+            });
+            
+            const first = records[0];
+            const last = records[records.length - 1];
+            const firstTime = first.actual;
+            const lastTime = last.actual;
+            const improvement = firstTime > 0 ? Math.round(((firstTime - lastTime) / firstTime) * 100) : 0;
+            
+            // Count AI vs Manual (N/A counts as Manual)
+            let aiCount = 0, manualCount = 0;
+            records.forEach(r => {
+                const methods = r.methods || (r.method ? [r.method] : ['manual']);
+                if (methods.some(m => m !== 'manual' && m !== 'na')) {
+                    aiCount++;
+                } else {
+                    manualCount++;
+                }
+            });
+            
+            return {
+                name: first.name, // Use original casing
+                count: records.length,
+                firstTime,
+                lastTime,
+                improvement,
+                aiCount,
+                manualCount,
+                lastDate: last.date
+            };
+        })
+        .sort((a, b) => b.lastDate.localeCompare(a.lastDate)) // Most recent first
+        .slice(0, 5); // Show top 5
+    
+    let heroContent = '';
+    
+    if (repeatedTasks.length > 0) {
+        heroContent = `
+            <div class="ai-hero-title">Repeated Task Efficiency</div>
+            <div class="ai-repeated-tasks">
+        `;
+        
+        repeatedTasks.forEach(task => {
+            const improved = task.improvement > 0;
+            const progressPct = Math.min(100, Math.max(10, 100 - (task.lastTime / task.firstTime * 100)));
+            
+            heroContent += `
+                <div class="ai-task-row">
+                    <div class="ai-task-header">
+                        <span class="ai-task-name">${esc(task.name)}</span>
+                        <span class="ai-task-count">${task.count}x</span>
+                    </div>
+                    <div class="ai-task-progress">
+                        <div class="ai-task-bar">
+                            <div class="ai-task-fill ${improved ? 'improved' : ''}" style="width:${progressPct}%"></div>
+                        </div>
+                        <div class="ai-task-times">
+                            <span>${formatDuration(task.firstTime)}</span>
+                            <span>→</span>
+                            <span>${formatDuration(task.lastTime)}</span>
+                            <span class="ai-task-diff ${improved ? 'faster' : 'slower'}">
+                                ${improved ? '↓' : '↑'} ${Math.abs(task.improvement)}%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="ai-task-methods">
+                        Manual(${task.manualCount}) → AI(${task.aiCount})
+                    </div>
+                </div>
+            `;
+        });
+        
+        heroContent += '</div>';
+    } else if (total > 0) {
+        // Not enough repeated tasks
+        heroContent = `
+            <div class="ai-hero-summary">
+                <div class="ai-hero-stat-large">
+                    <div class="ai-hero-stat-value">${totalAi}</div>
+                    <div class="ai-hero-stat-label">AI Tasks</div>
+                </div>
+                <div class="ai-hero-stat-large">
+                    <div class="ai-hero-stat-value">${totalManual}</div>
+                    <div class="ai-hero-stat-label">Manual Tasks</div>
+                </div>
+            </div>
+            <div class="ai-hero-hint">Complete the same task 2+ times to track efficiency</div>
+        `;
+    } else {
+        heroContent = `
+            <div class="ai-hero-empty">Complete tasks to see efficiency analysis</div>
+        `;
+    }
+    
+    // AI ratio bar
+    heroContent += `
+        <div class="ai-ratio-section">
+            <div class="ai-ratio-bar">
+                <div class="ai-ratio-fill" style="width:${aiPct}%"></div>
+            </div>
+            <div class="ai-ratio-labels">
+                <span>${aiPct}% AI</span>
+                <span>${100 - aiPct}% Manual</span>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = heroContent;
+}
+
+function renderCategoryTimeChart(data) {
+    const container = document.getElementById('categoryTimeChart');
+    
+    // Calculate time by category
+    const catTime = { work: 0, meeting: 0, ai: 0, personal: 0, health: 0 };
+    data.forEach(h => {
+        const cat = h.category || 'work';
+        catTime[cat] = (catTime[cat] || 0) + h.actual;
+    });
+    
+    const maxMins = Math.max(...Object.values(catTime), 1);
+    const catLabels = { work: 'Work', meeting: 'Meeting', ai: 'AI/Learning', personal: 'Personal', health: 'Health' };
+    
+    let html = '';
+    ['work', 'meeting', 'ai', 'personal', 'health'].forEach(cat => {
+        const mins = catTime[cat] || 0;
+        const pct = Math.round((mins / maxMins) * 100);
+        const hours = (mins / 60).toFixed(1);
+        
+        html += `
+            <div class="category-time-row">
+                <div class="category-time-label">${catLabels[cat]}</div>
+                <div class="category-time-bar-bg">
+                    <div class="category-time-bar ${cat}" style="width:${Math.max(pct, mins > 0 ? 15 : 0)}%">
+                        ${mins > 0 ? `<span class="category-time-value">${hours}h</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html || '<div class="ai-empty">No data yet</div>';
+}
+
+function renderMethodStats() {
+    const container = document.getElementById('methodStats');
+    
+    // Group by method (exclude manual, focus on AI tools)
+    const methodStats = {};
+    completedHistory.forEach(h => {
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        methods.forEach(method => {
+            if (!methodStats[method]) {
+                methodStats[method] = { count: 0, totalTime: 0 };
+            }
+            methodStats[method].count++;
+            methodStats[method].totalTime += h.actual;
+        });
+    });
+    
+    if (Object.keys(methodStats).length === 0) {
+        container.innerHTML = '<div class="ai-empty">Complete tasks to see AI tool usage</div>';
+        return;
+    }
+    
+    const methodLabels = {
+        manual: { icon: '✋', name: 'Manual' },
+        claude: { icon: '🤖', name: 'Claude' },
+        gemini: { icon: '✨', name: 'Gemini' },
+        chatgpt: { icon: '💬', name: 'ChatGPT' },
+        wispr: { icon: '🎙️', name: 'Wispr' },
+        other: { icon: '🔧', name: 'Other AI' },
+        na: { icon: '🧘', name: 'N/A (Health)' }
+    };
+    
+    let html = '<div class="method-breakdown">';
+    
+    // Sort by count, AI tools first
+    const sorted = Object.entries(methodStats).sort((a, b) => {
+        // AI tools first
+        if (a[0] === 'manual' && b[0] !== 'manual') return 1;
+        if (a[0] !== 'manual' && b[0] === 'manual') return -1;
+        return b[1].count - a[1].count;
+    });
+    
+    sorted.forEach(([method, stats]) => {
+        const label = methodLabels[method] || { icon: '🔧', name: method };
+        const avgTime = Math.round(stats.totalTime / stats.count);
+        html += `
+            <div class="method-row">
+                <div class="method-info">
+                    <span class="method-icon">${label.icon}</span>
+                    <span class="method-name">${label.name}</span>
+                </div>
+                <div class="method-stats">
+                    <span class="method-count">${stats.count}x</span>
+                    <span class="method-time">Avg ${formatDuration(avgTime)}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+
+function renderInsights() {
+    const insights = [];
+    
+    if (completedHistory.length === 0) {
+        insights.push({ icon: '💡', text: 'Complete tasks to see insights' });
+    } else {
+        // Find repeated tasks for insights
+        const tasksByName = {};
+        completedHistory.forEach(h => {
+            const name = h.name.trim().toLowerCase();
+            if (!tasksByName[name]) {
+                tasksByName[name] = { name: h.name, records: [] };
+            }
+            tasksByName[name].records.push(h);
+        });
+        
+        const repeatedTasks = Object.values(tasksByName).filter(t => t.records.length >= 2);
+        
+        // Find most improved repeated task
+        if (repeatedTasks.length > 0) {
+            let bestImprovement = { name: '', pct: 0, first: 0, last: 0 };
+            
+            repeatedTasks.forEach(task => {
+                task.records.sort((a, b) => a.date.localeCompare(b.date));
+                const first = task.records[0].actual;
+                const last = task.records[task.records.length - 1].actual;
+                const pct = first > 0 ? Math.round(((first - last) / first) * 100) : 0;
+                
+                if (pct > bestImprovement.pct) {
+                    bestImprovement = { name: task.name, pct, first, last };
+                }
+            });
+            
+            if (bestImprovement.pct > 10) {
+                insights.push({
+                    icon: '🚀',
+                    text: `<strong>${bestImprovement.name}</strong> improved ${bestImprovement.pct}% (${formatDuration(bestImprovement.first)} → ${formatDuration(bestImprovement.last)})`
+                });
+            }
+        }
+        
+        // AI vs Manual - suggest trying AI
+        const manualTasks = completedHistory.filter(h => {
+            const methods = h.methods || (h.method ? [h.method] : ['manual']);
+            return methods.length === 1 && methods[0] === 'manual';
+        });
+        
+        // Find Manual tasks that took longest - suggest AI
+        if (manualTasks.length > 0) {
+            const longManual = [...manualTasks].sort((a, b) => b.actual - a.actual);
+            const topManual = longManual[0];
+            if (topManual && topManual.actual >= 30) {
+                insights.push({
+                    icon: '💡',
+                    text: `<strong>${topManual.name}</strong> took ${formatDuration(topManual.actual)} manually. Try AI next time?`
+                });
+            }
+        }
+        
+        // Suggest creating routines for repeated tasks not yet marked as routine
+        if (repeatedTasks.length > 0) {
+            const frequentTask = repeatedTasks.sort((a, b) => b.records.length - a.records.length)[0];
+            if (frequentTask.records.length >= 3) {
+                insights.push({
+                    icon: '🔄',
+                    text: `<strong>${frequentTask.name}</strong> done ${frequentTask.records.length} times. Make it a Routine?`
+                });
+            }
+        }
+        
+        // Total stats
+        const totalTime = completedHistory.reduce((s, h) => s + h.actual, 0);
+        const aiTasks = completedHistory.filter(h => {
+            const methods = h.methods || (h.method ? [h.method] : ['manual']);
+            return methods.some(m => m !== 'manual' && m !== 'na');
+        });
+        const aiPct = completedHistory.length > 0 ? Math.round((aiTasks.length / completedHistory.length) * 100) : 0;
+        
+        insights.push({
+            icon: '📊',
+            text: `Total tracked: <strong>${formatDuration(totalTime)}</strong>, AI usage: <strong>${aiPct}%</strong>`
+        });
+        
+        if (insights.length === 0) {
+            insights.push({ icon: '✨', text: 'Keep tracking to unlock more insights!' });
+        }
+    }
+    
+    document.getElementById('insightsList').innerHTML = insights.map(i => `
+        <div class="insight-item">
+            <div class="insight-icon">${i.icon}</div>
+            <div class="insight-text">${i.text}</div>
+        </div>
+    `).join('');
+}
+
+function renderWeeklyReport() {
+    const container = document.getElementById('weeklyReportContent');
+    
+    // This week's data
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    const weekKey = formatDateKey(weekStart);
+    
+    const thisWeek = completedHistory.filter(h => h.date >= weekKey);
+    
+    // Last week's data for comparison
+    const lastWeekStart = new Date(weekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    const lastWeekEnd = new Date(weekStart);
+    lastWeekEnd.setDate(lastWeekEnd.getDate() - 1);
+    const lastWeek = completedHistory.filter(h => 
+        h.date >= formatDateKey(lastWeekStart) && h.date <= formatDateKey(lastWeekEnd)
+    );
+    
+    if (thisWeek.length === 0) {
+        container.innerHTML = '<div class="report-empty">No tasks completed this week<br>Start tracking to generate report</div>';
+        return;
+    }
+    
+    // Calculate stats
+    const totalTasks = thisWeek.length;
+    const totalTime = thisWeek.reduce((s, h) => s + h.actual, 0);
+    
+    // Compare with last week
+    const lastWeekTime = lastWeek.reduce((s, h) => s + h.actual, 0);
+    const timeDiff = totalTime - lastWeekTime;
+    const timeDiffText = lastWeek.length > 0 
+        ? (timeDiff >= 0 
+            ? `<span class="report-value positive">↑${formatDuration(timeDiff)}</span>` 
+            : `<span class="report-value negative">↓${formatDuration(Math.abs(timeDiff))}</span>`)
+        : '';
+    
+    // AI usage (exclude N/A health tasks)
+    let aiCount = 0;
+    thisWeek.forEach(h => {
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        if (methods.some(m => m !== 'manual' && m !== 'na')) aiCount++;
+    });
+    const aiRate = Math.round((aiCount / totalTasks) * 100);
+    
+    // Time by category
+    const catTime = {};
+    thisWeek.forEach(h => {
+        const cat = h.category || 'work';
+        catTime[cat] = (catTime[cat] || 0) + h.actual;
+    });
+    
+    // Find top category
+    let topCat = null, topCatTime = 0;
+    Object.entries(catTime).forEach(([cat, time]) => {
+        if (time > topCatTime) {
+            topCatTime = time;
+            topCat = cat;
+        }
+    });
+    
+    // Generate insight
+    let insight = '';
+    if (topCat) {
+        const catLabel = CATS.find(c => c.id === topCat)?.label || topCat;
+        const pct = Math.round((topCatTime / totalTime) * 100);
+        insight = `<span class="report-insight-icon">📊</span><strong>${catLabel}</strong> took ${pct}% of your time`;
+    }
+    if (aiRate > 50) {
+        insight = `<span class="report-insight-icon">🤖</span>AI usage reached ${aiRate}% this week`;
+    }
+    if (!insight) {
+        insight = `<span class="report-insight-icon">💡</span>Keep tracking to understand your time`;
+    }
+    
+    container.innerHTML = `
+        <div class="report-highlight">
+            <span class="report-label">Tasks Done</span>
+            <span class="report-value">${totalTasks}</span>
+        </div>
+        <div class="report-highlight">
+            <span class="report-label">Time Tracked</span>
+            <span class="report-value">${formatDuration(totalTime)} ${timeDiffText}</span>
+        </div>
+        <div class="report-highlight">
+            <span class="report-label">AI Rate</span>
+            <span class="report-value">${aiRate}%</span>
+        </div>
+        <div class="report-insight">${insight}</div>
+    `;
+}
+
+// ══════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════
+const onboardingSteps = [
+    {
+        icon: '⏱',
+        title: 'Welcome to AIAudit',
+        desc: 'Know where your time goes. Track tasks, compare AI vs Manual, and get suggestions to work smarter.',
+        content: `
+            <div class="onboarding-concept" style="margin-top:16px;">
+                <div class="onboarding-concept-item">
+                    <div class="onboarding-concept-icon">📊</div>
+                    <div class="onboarding-concept-title">Time Audit</div>
+                    <div class="onboarding-concept-desc">See how you spend your time by category.</div>
+                </div>
+                <div class="onboarding-concept-item">
+                    <div class="onboarding-concept-icon">🤖</div>
+                    <div class="onboarding-concept-title">AI Insights</div>
+                    <div class="onboarding-concept-desc">Find tasks where AI can save you time.</div>
+                </div>
+            </div>
+        `
+    },
+    {
+        icon: '📝',
+        title: 'Task vs Event',
+        desc: 'Understand the two core concepts:',
+        content: `
+            <div class="onboarding-concept">
+                <div class="onboarding-concept-item">
+                    <div class="onboarding-concept-icon">📋</div>
+                    <div class="onboarding-concept-title">Task</div>
+                    <div class="onboarding-concept-desc">A to-do item you create. Lives in the Tasks tab until scheduled.</div>
+                </div>
+                <div class="onboarding-concept-item">
+                    <div class="onboarding-concept-icon">📅</div>
+                    <div class="onboarding-concept-title">Event</div>
+                    <div class="onboarding-concept-desc">A scheduled time block. Shows up in Today's calendar view.</div>
+                </div>
+            </div>
+        `
+    },
+    {
+        icon: '🔄',
+        title: 'The Flow',
+        desc: 'Create a task, schedule it, then track your time:',
+        content: `
+            <div class="onboarding-diagram">
+                <div class="onboarding-flow">
+                    <div class="onboarding-flow-item">
+                        <div class="onboarding-flow-box">Create Task</div>
+                        <div class="onboarding-flow-label">Tasks tab</div>
+                    </div>
+                    <div class="onboarding-flow-arrow">→</div>
+                    <div class="onboarding-flow-item">
+                        <div class="onboarding-flow-box">Schedule</div>
+                        <div class="onboarding-flow-label">Pick time</div>
+                    </div>
+                    <div class="onboarding-flow-arrow">→</div>
+                    <div class="onboarding-flow-item">
+                        <div class="onboarding-flow-box highlight">Track</div>
+                        <div class="onboarding-flow-label">Today tab</div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        icon: '⏱',
+        title: 'One-Click Timer',
+        desc: 'Start and complete tasks with a single tap:',
+        content: `
+            <div class="onboarding-timer-demo">
+                <div class="onboarding-timer-step">
+                    <div class="onboarding-timer-btn play">▶</div>
+                    <div class="onboarding-timer-label">Tap to start</div>
+                </div>
+                <div class="onboarding-flow-arrow">→</div>
+                <div class="onboarding-timer-step">
+                    <div class="onboarding-timer-btn timing">⏱</div>
+                    <div class="onboarding-timer-label">Tap to complete</div>
+                </div>
+            </div>
+        `
+    }
+];
+
+let currentOnboardingStep = 0;
+
+function checkOnboarding() {
+    const hasSeenOnboarding = localStorage.getItem('aiaudit_onboarding_done');
+    if (!hasSeenOnboarding) {
+        showOnboarding();
+    }
+}
+
+function showOnboarding() {
+    currentOnboardingStep = 0;
+    renderOnboardingStep();
+    document.getElementById('onboardingOverlay').classList.add('show');
+    document.getElementById('onboardingModal').classList.add('show');
+}
+
+function renderOnboardingStep() {
+    const step = onboardingSteps[currentOnboardingStep];
+    const isLast = currentOnboardingStep === onboardingSteps.length - 1;
+    
+    document.getElementById('onboardingContent').innerHTML = `
+        <div class="onboarding-icon">${step.icon}</div>
+        <div class="onboarding-title">${step.title}</div>
+        <div class="onboarding-desc">${step.desc}</div>
+        ${step.content}
+    `;
+    
+    // Update dots
+    let dotsHtml = '';
+    for (let i = 0; i < onboardingSteps.length; i++) {
+        dotsHtml += `<div class="onboarding-dot${i === currentOnboardingStep ? ' active' : ''}"></div>`;
+    }
+    document.getElementById('onboardingDots').innerHTML = dotsHtml;
+    
+    // Update button text
+    document.getElementById('onboardingNext').textContent = isLast ? 'Get Started' : 'Next';
+    document.getElementById('onboardingSkip').style.visibility = isLast ? 'hidden' : 'visible';
+}
+
+function nextOnboarding() {
+    if (currentOnboardingStep < onboardingSteps.length - 1) {
+        currentOnboardingStep++;
+        renderOnboardingStep();
+    } else {
+        completeOnboarding();
+    }
+}
+
+function skipOnboarding() {
+    completeOnboarding();
+}
+
+function completeOnboarding() {
+    localStorage.setItem('aiaudit_onboarding_done', 'true');
+    document.getElementById('onboardingOverlay').classList.remove('show');
+    document.getElementById('onboardingModal').classList.remove('show');
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+function init() {
+    loadData();
+    loadQuickRoutines(); // Load custom quick routines
+    processAllRoutineTasks(); // Auto-schedule routine tasks for today
+    renderTasks();
+    renderTimeGrid();
+    renderStats();
+    
+    // Check if should show onboarding
+    checkOnboarding();
+    
+    // Update now line every 30 seconds
+    setInterval(() => {
+        const todayTab = document.getElementById('tabToday');
+        if (todayTab && todayTab.classList.contains('active')) {
+            updateNowLine();
+        }
+    }, 30000);
+    
+    // Update active timers every 10 seconds
+    setInterval(() => {
+        const hasActiveTimer = events.some(e => e.startedAt && !e.completed);
+        if (hasActiveTimer) {
+            const todayTab = document.getElementById('tabToday');
+            if (todayTab && todayTab.classList.contains('active')) {
+                renderTimeGrid();
+            }
+        }
+    }, 10000);
+    
+    // Update when page becomes visible again
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            processAllRoutineTasks(); // Check routine tasks when returning
+            const todayTab = document.getElementById('tabToday');
+            if (todayTab && todayTab.classList.contains('active')) {
+                renderTimeGrid();
+            }
+        }
+    });
+    
+    // Update on touch/click (user interaction)
+    document.addEventListener('touchstart', scheduleNowLineUpdate, { passive: true });
+    document.addEventListener('click', scheduleNowLineUpdate);
+}
+
+let nowLineUpdateScheduled = false;
+function scheduleNowLineUpdate() {
+    if (nowLineUpdateScheduled) return;
+    nowLineUpdateScheduled = true;
+    setTimeout(() => {
+        nowLineUpdateScheduled = false;
+        const todayTab = document.getElementById('tabToday');
+        if (todayTab && todayTab.classList.contains('active')) {
+            updateNowLine();
+        }
+    }, 100);
+}
+
+// Lightweight now line update (without full re-render)
+function updateNowLine() {
+    const now = new Date();
+    const isToday = formatDateKey(currentDate) === formatDateKey(now);
+    
+    // Remove existing now line
+    const existingLine = document.querySelector('.now-line');
+    if (existingLine) existingLine.remove();
+    
+    if (!isToday) return;
+    
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const gridEnd = Math.max(WORK_END, now.getHours() + 1);
+    
+    if (nowMins >= WORK_START * 60 && nowMins < gridEnd * 60) {
+        const topPos = ((nowMins - WORK_START * 60) / 60) * 60;
+        const container = document.getElementById('timeGrid');
+        if (container) {
+            const line = document.createElement('div');
+            line.className = 'now-line';
+            line.style.top = topPos + 'px';
+            container.appendChild(line);
+        }
+    }
+}
+
+// ══════════════════════════════════════
+// HELP SYSTEM
+// ══════════════════════════════════════
+const HELP_CONTENT = {
+    quickstart: {
+        title: '🚀 Quick Start',
+        html: `
+            <div class="help-section">
+                <div class="help-section-title">Step 1: Add a Task</div>
+                <div class="help-text">
+                    Tap <strong>+</strong> to create a new task.<br>
+                    Enter name, select category, and estimate duration.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">Step 2: Schedule It</div>
+                <div class="help-text">
+                    Tap task → Select a time slot → <strong>Schedule</strong><br>
+                    The task appears in your Today calendar as an event.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">Step 3: Track & Complete</div>
+                <div class="help-text">
+                    Tap <strong>▶</strong> to start the timer.<br>
+                    When done, tap <strong>⏱</strong> to complete.<br>
+                    Select how you completed (Manual, Claude, ChatGPT, etc.)
+                </div>
+            </div>
+            <div class="help-tip">💡 Track your time to see how AI tools change your workflow!</div>
+        `
+    },
+    features: {
+        title: '📖 Features',
+        html: `
+            <div class="help-section">
+                <div class="help-section-title">📋 Tasks Tab</div>
+                <div class="help-text">
+                    Create tasks with name, category, and duration estimate.<br>
+                    Categories: Work, Meeting, AI, Personal, Health
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">📅 Today Tab</div>
+                <div class="help-text">
+                    Visual calendar showing scheduled tasks.<br>
+                    Navigate between days with ‹ › buttons.<br>
+                    Red line shows current time.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">📊 Stats Tab</div>
+                <div class="help-text">
+                    Track repeated task efficiency over time.<br>
+                    See AI vs Manual ratio and get improvement suggestions.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">📝 Notes</div>
+                <div class="help-text">
+                    Tap any event to open details panel.<br>
+                    Add notes that are saved automatically.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">⏱ One-Click Timer</div>
+                <div class="help-text">
+                    <strong>▶</strong> Tap play button to start timer.<br>
+                    <strong>⏱</strong> Tap timer icon to complete.<br>
+                    Select completion method (Manual, Claude, etc.)<br>
+                    Health tasks show N/A option only.
+                </div>
+            </div>
+        `
+    },
+    faq: {
+        title: '❓ FAQ',
+        html: `
+            <div class="faq-item">
+                <div class="faq-q">Q: What's the difference between Task and Event?</div>
+                <div class="faq-a">A: A <strong>Task</strong> is a to-do item you create. An <strong>Event</strong> is when you schedule a task to a specific time slot. Task → Schedule → Event.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: Where is my data stored?</div>
+                <div class="faq-a">A: All data is stored locally in your browser (localStorage). It won't sync across devices automatically - use Export/Import for that.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: How do I sync between devices?</div>
+                <div class="faq-a">A: Go to More → Export Backup, upload to Google Drive/Dropbox, then Import on your other device.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: What does the app track?</div>
+                <div class="faq-a">A: It tracks time spent on each task, broken down by category and how you completed it (Manual, Claude, ChatGPT, etc.).</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: Why can't I see late evening time slots?</div>
+                <div class="faq-a">A: Time slots are available from 5am to 11pm. If scheduling today, slots start from the current time.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: How do I delete a task or event?</div>
+                <div class="faq-a">A: Tap the task/event → Delete button at the bottom of the sheet.</div>
+            </div>
+        `
+    }
+};
+
+function openHelp(section) {
+    const content = HELP_CONTENT[section];
+    if (!content) return;
+    
+    document.getElementById('helpTitle').textContent = content.title;
+    document.getElementById('helpBody').innerHTML = content.html;
+    document.getElementById('helpOverlay').classList.add('show');
+    document.getElementById('helpModal').classList.add('show');
+}
+
+function closeHelp() {
+    document.getElementById('helpOverlay').classList.remove('show');
+    document.getElementById('helpModal').classList.remove('show');
+}
+
+// ══════════════════════════════════════
+// BACKUP & SYNC
+// ══════════════════════════════════════
+function exportBackup() {
+    const backup = {
+        version: '1.1',
+        exportedAt: new Date().toISOString(),
+        tasks: tasks,
+        events: events,
+        completedHistory: completedHistory
+    };
+    
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aiaudit_backup_${formatDateKey(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('Backup exported!');
+}
+
+function importBackup(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+            const backup = JSON.parse(evt.target.result);
+            
+            if (backup.tasks) tasks = backup.tasks;
+            if (backup.events) events = backup.events;
+            if (backup.completedHistory) completedHistory = backup.completedHistory;
+            
+            saveData();
+            renderTasks();
+            renderTimeGrid();
+            renderStats();
+            
+            showToast('Backup restored!');
+        } catch (err) {
+            showToast('Invalid backup file');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
+}
+
+function openSyncUrl() {
+    document.getElementById('syncOverlay').classList.add('show');
+    document.getElementById('syncModal').classList.add('show');
+}
+
+function closeSyncUrl() {
+    document.getElementById('syncOverlay').classList.remove('show');
+    document.getElementById('syncModal').classList.remove('show');
+}
+
+function closeSyncOverlay() {
+    document.getElementById('syncOverlay').classList.remove('show');
+    document.getElementById('syncModal').classList.remove('show');
+    document.getElementById('aiAnalysisModal').classList.remove('show');
+}
+
+function loadFromUrl() {
+    let url = document.getElementById('syncUrlInput').value.trim();
+    if (!url) {
+        showToast('Please enter a URL');
+        return;
+    }
+    
+    // Convert Google Drive view URL to direct download
+    if (url.includes('drive.google.com') && url.includes('/view')) {
+        url = url.replace('/view', '/uc?export=download');
+    }
+    
+    showToast('Loading...');
+    
+    fetch(url)
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch');
+            return res.json();
+        })
+        .then(backup => {
+            if (backup.tasks) tasks = backup.tasks;
+            if (backup.events) events = backup.events;
+            if (backup.completedHistory) completedHistory = backup.completedHistory;
+            
+            saveData();
+            renderTasks();
+            renderTimeGrid();
+            renderStats();
+            closeSyncUrl();
+            
+            showToast('Synced successfully!');
+        })
+        .catch(err => {
+            showToast('Failed to sync. Check URL.');
+            console.error(err);
+        });
+}
+
+// ══════════════════════════════════════
+// AI ANALYSIS EXPORT
+// ══════════════════════════════════════
+function exportForAI() {
+    if (completedHistory.length === 0) {
+        showToast('No completed tasks yet. Complete some tasks first!');
+        return;
+    }
+    
+    // Build summary data
+    const summary = {
+        totalTasks: completedHistory.length,
+        byCategory: {},
+        byMethod: {},
+        totalTime: 0,
+        tasks: []
+    };
+    
+    completedHistory.forEach(h => {
+        // Category stats
+        if (!summary.byCategory[h.category]) {
+            summary.byCategory[h.category] = { count: 0, time: 0 };
+        }
+        summary.byCategory[h.category].count++;
+        summary.byCategory[h.category].time += h.actual;
+        
+        // Method stats
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        methods.forEach(m => {
+            if (!summary.byMethod[m]) {
+                summary.byMethod[m] = { count: 0, time: 0 };
+            }
+            summary.byMethod[m].count++;
+            summary.byMethod[m].time += h.actual;
+        });
+        
+        summary.totalTime += h.actual;
+        
+        // Add task detail
+        summary.tasks.push({
+            name: h.name,
+            category: h.category,
+            duration: h.actual + 'm',
+            methods: methods.join(', '),
+            date: h.completedAt ? h.completedAt.split('T')[0] : 'unknown'
+        });
+    });
+    
+    // Find repeated tasks for efficiency tracking
+    const tasksByName = {};
+    completedHistory.forEach(h => {
+        const name = h.name.trim().toLowerCase();
+        if (!tasksByName[name]) {
+            tasksByName[name] = { displayName: h.name, records: [] };
+        }
+        const methods = h.methods || (h.method ? [h.method] : ['manual']);
+        const isAI = methods.some(m => m !== 'manual' && m !== 'na');
+        tasksByName[name].records.push({
+            date: h.date,
+            actual: h.actual,
+            isAI: isAI,
+            methods: methods.join(', ')
+        });
+    });
+    
+    const repeatedTasks = Object.values(tasksByName)
+        .filter(t => t.records.length >= 2)
+        .map(task => {
+            // Sort by date
+            task.records.sort((a, b) => a.date.localeCompare(b.date));
+            const first = task.records[0];
+            const last = task.records[task.records.length - 1];
+            const improvement = first.actual > 0 
+                ? Math.round(((first.actual - last.actual) / first.actual) * 100) 
+                : 0;
+            const aiCount = task.records.filter(r => r.isAI).length;
+            const manualCount = task.records.length - aiCount;
+            
+            return {
+                name: task.displayName,
+                count: task.records.length,
+                firstTime: first.actual,
+                lastTime: last.actual,
+                improvement: improvement,
+                aiCount: aiCount,
+                manualCount: manualCount,
+                timeline: task.records.map(r => `${r.date}: ${r.actual}m (${r.methods})`).join(' → ')
+            };
+        })
+        .sort((a, b) => b.count - a.count);
+    
+    // Generate prompt
+    let prompt = `I've been tracking my time using AIAudit. Please analyze my data and help me identify efficiency patterns and improvement opportunities.
+
+=== SUMMARY ===
+- Total tasks completed: ${summary.totalTasks}
+- Total time tracked: ${formatDuration(summary.totalTime)}
+- Average task duration: ${formatDuration(Math.round(summary.totalTime / summary.totalTasks))}
+
+=== BY CATEGORY ===
+${Object.entries(summary.byCategory).map(([cat, data]) => {
+    const pct = Math.round((data.time / summary.totalTime) * 100);
+    return `- ${cat}: ${data.count} tasks, ${formatDuration(data.time)} (${pct}%), avg ${Math.round(data.time / data.count)}m`;
+}).join('\n')}
+
+=== BY COMPLETION METHOD ===
+${Object.entries(summary.byMethod).map(([method, data]) => {
+    const avgTime = Math.round(data.time / data.count);
+    return `- ${method}: ${data.count} tasks, avg ${avgTime}m per task`;
+}).join('\n')}`;
+
+    // Add repeated tasks section if exists
+    if (repeatedTasks.length > 0) {
+        prompt += `
+
+=== REPEATED TASKS EFFICIENCY (Key Data for Analysis) ===
+${repeatedTasks.map(t => {
+    const trend = t.improvement > 0 ? `↓ ${t.improvement}% faster` : (t.improvement < 0 ? `↑ ${Math.abs(t.improvement)}% slower` : 'no change');
+    return `
+📌 "${t.name}" (${t.count} times)
+   First: ${t.firstTime}m → Last: ${t.lastTime}m | ${trend}
+   AI: ${t.aiCount} times, Manual: ${t.manualCount} times
+   Timeline: ${t.timeline}`;
+}).join('\n')}`;
+    }
+
+    prompt += `
+
+=== DETAILED TASK LOG ===
+${summary.tasks.map(t => `[${t.date}] ${t.name} (${t.category}) | ${t.duration} | ${t.methods}`).join('\n')}
+
+=== PLEASE ANALYZE ===
+1. **Efficiency Trends**: Which repeated tasks show improvement? Which are getting slower?
+2. **AI Impact**: For tasks done both with AI and manually, is AI actually helping?
+3. **Optimization Opportunities**: Which manual tasks should I try with AI next?
+4. **Time Allocation**: Am I spending time on the right things?
+5. **Specific Recommendations**: Give me 3 actionable changes to improve productivity.`;
+
+    document.getElementById('aiPromptText').value = prompt;
+    document.getElementById('syncOverlay').classList.add('show');
+    document.getElementById('aiAnalysisModal').classList.add('show');
+}
+
+function closeAIAnalysis() {
+    document.getElementById('syncOverlay').classList.remove('show');
+    document.getElementById('aiAnalysisModal').classList.remove('show');
+}
+
+function copyAIPrompt() {
+    const text = document.getElementById('aiPromptText').value;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+    }).catch(() => {
+        // Fallback for older browsers
+        document.getElementById('aiPromptText').select();
+        document.execCommand('copy');
+        showToast('Copied to clipboard!');
+    });
+}
+
+// ══════════════════════════════════════
+// ICS IMPORT
+// ══════════════════════════════════════
+function handleICSFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        parseICS(evt.target.result);
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
+}
+
+function parseICS(text) {
+    const meetings = [];
+    const blocks = text.split('BEGIN:VEVENT');
+    const targetDate = new Date(currentDate);
+    const targetDateStr = targetDate.toISOString().slice(0,10).replace(/-/g,'');
+
+    for (let i = 1; i < blocks.length; i++) {
+        const block = blocks[i];
+
+        // 1. Normalize line endings and unfold (RFC 5545: continuation lines start with space/tab)
+        const normalized = block.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const unfolded = normalized.replace(/\n[ \t]/g, '');
+        const lines = unfolded.split('\n');
+
+        // 2. Extract SUMMARY — search line by line for robustness
+        let summary = '';
+        for (const line of lines) {
+            if (/^SUMMARY/i.test(line)) {
+                const colonIdx = line.indexOf(':');
+                if (colonIdx >= 0) {
+                    summary = line.substring(colonIdx + 1).trim();
+                }
+                break;
+            }
+        }
+
+        // 3. Decode ICS escaped characters
+        summary = summary
+            .replace(/\\,/g, ',')
+            .replace(/\\;/g, ';')
+            .replace(/\\n/gi, ' ')
+            .replace(/\\\\/g, '\\')
+            .replace(/\r/g, '')
+            .trim();
+
+        if (!summary) summary = 'Untitled';
+
+        // 4. Extract DTSTART / DTEND
+        let dtstart = '', dtend = '';
+        for (const line of lines) {
+            if (/^DTSTART/i.test(line)) {
+                const m = line.match(/(\d{8}T\d{6}Z?)/);
+                if (m) dtstart = m[1];
+            }
+            if (/^DTEND/i.test(line)) {
+                const m = line.match(/(\d{8}T\d{6}Z?)/);
+                if (m) dtend = m[1];
+            }
+        }
+
+        if (!dtstart) continue;
+
+        const startDate = parseICSDate(dtstart);
+        const endDate = dtend ? parseICSDate(dtend) : null;
+        if (!startDate) continue;
+
+        // Filter: current viewed date only
+        const sd = `${startDate.getFullYear()}${String(startDate.getMonth()+1).padStart(2,'0')}${String(startDate.getDate()).padStart(2,'0')}`;
+        if (sd !== targetDateStr) continue;
+
+        const startMin = startDate.getHours() * 60 + startDate.getMinutes();
+        const endMin = endDate ? (endDate.getHours() * 60 + endDate.getMinutes()) : startMin + 30;
+
+        // Skip all-day events
+        if (startMin === 0 && (endMin === 0 || endMin - startMin >= 1380)) continue;
+
+        // Clamp to work hours
+        const s = Math.max(WORK_START * 60, startMin);
+        const e = Math.min(WORK_END * 60, endMin);
+        if (e - s < 5) continue;
+
+        meetings.push({
+            id: 'ics_' + Date.now() + '_' + Math.random().toString(36).substr(2,9),
+            taskId: null,
+            name: summary,
+            date: formatDateKey(targetDate),
+            start: s,
+            end: e,
+            estimatedDuration: e - s,
+            category: 'meeting',
+            source: 'ics',
+            completed: false
+        });
+    }
+
+    if (!meetings.length) {
+        showToast('No meetings found for ' + formatDateKey(targetDate));
+        return;
+    }
+
+    // Remove existing ICS-imported meetings for this date before re-importing
+    // BUT keep completed ones to preserve history
+    const dateKey = formatDateKey(targetDate);
+    events = events.filter(ev => !(ev.source === 'ics' && ev.date === dateKey && !ev.completed));
+
+    // Add meetings, skip overlaps with existing events
+    let added = 0;
+    meetings.sort((a,b) => a.start - b.start);
+    for (const m of meetings) {
+        if (!hasEventOverlap(m.start, m.end, dateKey, null)) {
+            events.push(m);
+            added++;
+        }
+    }
+
+    events.sort((a,b) => a.start - b.start);
+    renderTimeGrid();
+    saveData();
+    showToast(`Imported ${added} meeting${added!==1?'s':''} to Today`);
+}
+
+function parseICSDate(str) {
+    const match = str.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
+    if (!match) return null;
+    const [,y,mo,d,h,mi,s] = match;
+    if (str.endsWith('Z')) return new Date(Date.UTC(+y,+mo-1,+d,+h,+mi,+s));
+    return new Date(+y,+mo-1,+d,+h,+mi,+s);
+}
+
+function hasEventOverlap(start, end, dateKey, excludeId) {
+    return events.some(e => {
+        if (e.date !== dateKey) return false;
+        if (excludeId && e.id === excludeId) return false;
+        return start < e.end && end > e.start;
+    });
+}
+
+function clearAllData() {
+    // Show confirmation modal
+    document.getElementById('confirmClearOverlay').classList.add('show');
+    document.getElementById('confirmClearModal').classList.add('show');
+}
+
+function cancelClearData() {
+    document.getElementById('confirmClearOverlay').classList.remove('show');
+    document.getElementById('confirmClearModal').classList.remove('show');
+}
+
+function confirmClearData() {
+    document.getElementById('confirmClearOverlay').classList.remove('show');
+    document.getElementById('confirmClearModal').classList.remove('show');
+    
+    tasks = [];
+    events = [];
+    completedHistory = [];
+    
+    saveData();
+    renderTasks();
+    renderTimeGrid();
+    renderStats();
+    
+    showToast('All data cleared');
+    switchTab('tabTasks');
+}
+
+init();
+</script>
+</body>
+</html>
