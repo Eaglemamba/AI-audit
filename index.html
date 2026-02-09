@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AIAudit - Know Where Your Time Goes</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AIAudit">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23007aff' width='100' height='100' rx='20'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-family='system-ui'>⏱</text></svg>">
 <style>
 :root {
     --accent: #007aff;
@@ -1986,6 +1992,37 @@ body {
     padding: 8px 16px 0 16px;
     line-height: 1.4;
 }
+.more-value {
+    font-size: 14px;
+    color: var(--text2);
+    margin-right: 4px;
+}
+.toggle-switch {
+    width: 48px;
+    height: 28px;
+    background: var(--border);
+    border-radius: 14px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.toggle-switch.active {
+    background: var(--accent);
+}
+.toggle-knob {
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 12px;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-switch.active .toggle-knob {
+    left: 22px;
+}
 .app-version {
     text-align: center;
     font-size: 12px;
@@ -2541,6 +2578,30 @@ body {
             </div>
 
             <div class="more-section">
+                <div class="more-section-title">Reminders</div>
+                <div class="more-item" onclick="toggleNotifications()">
+                    <span class="more-icon">🔔</span>
+                    <span class="more-label">Daily Reminder</span>
+                    <div class="toggle-switch" id="notifToggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+                <div id="notifSettings" style="display:none;">
+                    <div class="more-item" onclick="openReminderTime('morning')">
+                        <span class="more-icon">🌅</span>
+                        <span class="more-label">Morning</span>
+                        <span class="more-value" id="morningTimeLabel">9:00 AM</span>
+                    </div>
+                    <div class="more-item" onclick="openReminderTime('evening')">
+                        <span class="more-icon">🌙</span>
+                        <span class="more-label">Evening Review</span>
+                        <span class="more-value" id="eveningTimeLabel">6:00 PM</span>
+                    </div>
+                </div>
+                <div class="more-hint" id="notifHint">Remind you to track time and review your day</div>
+            </div>
+
+            <div class="more-section">
                 <div class="more-section-title">Settings</div>
                 <div class="more-item" onclick="clearAllData()">
                     <span class="more-icon">🗑️</span>
@@ -2549,7 +2610,7 @@ body {
                 </div>
             </div>
 
-            <div class="app-version">AIAudit v1.1</div>
+            <div class="app-version">AIAudit v1.2</div>
         </div>
     </main>
 
@@ -3002,6 +3063,25 @@ body {
                 <button class="sync-btn" onclick="loadFromUrl()">Sync</button>
             </div>
             <div class="help-tip">💡 For Google Drive: Change /view to /uc?export=download in URL</div>
+        </div>
+    </div>
+</div>
+
+<!-- Reminder Time Modal -->
+<div class="help-overlay" id="reminderOverlay" onclick="closeReminderTime()"></div>
+<div class="help-modal" id="reminderModal" style="max-width:300px;">
+    <div class="help-header">
+        <div class="help-title" id="reminderTitle">Set Reminder Time</div>
+        <button class="help-close" onclick="closeReminderTime()">×</button>
+    </div>
+    <div class="help-body">
+        <div class="form-group">
+            <label class="form-label">Time</label>
+            <input type="time" class="form-input" id="reminderTimeInput" style="font-size:18px;text-align:center;">
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-btn primary" onclick="saveReminderTime()">Save</button>
+            <button class="confirm-btn cancel" onclick="closeReminderTime()">Cancel</button>
         </div>
     </div>
 </div>
@@ -5484,6 +5564,7 @@ function completeOnboarding() {
 function init() {
     loadData();
     loadQuickRoutines(); // Load custom quick routines
+    loadNotificationSettings(); // Load notification settings
     processAllRoutineTasks(); // Auto-schedule routine tasks for today
     renderTasks();
     renderTimeGrid();
@@ -6120,6 +6201,170 @@ function confirmClearData() {
     
     showToast('All data cleared');
     switchTab('tabTasks');
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATIONS (PWA)
+// ═══════════════════════════════════════════
+
+let notificationSettings = {
+    enabled: false,
+    morning: '09:00',
+    evening: '18:00'
+};
+
+function loadNotificationSettings() {
+    try {
+        const saved = localStorage.getItem('em_notifications');
+        if (saved) {
+            notificationSettings = JSON.parse(saved);
+        }
+    } catch(e) {}
+    updateNotificationUI();
+}
+
+function saveNotificationSettings() {
+    localStorage.setItem('em_notifications', JSON.stringify(notificationSettings));
+}
+
+function updateNotificationUI() {
+    const toggle = document.getElementById('notifToggle');
+    const settings = document.getElementById('notifSettings');
+    const hint = document.getElementById('notifHint');
+    
+    if (notificationSettings.enabled) {
+        toggle.classList.add('active');
+        settings.style.display = 'block';
+        hint.textContent = 'Notifications enabled';
+    } else {
+        toggle.classList.remove('active');
+        settings.style.display = 'none';
+        hint.textContent = 'Remind you to track time and review your day';
+    }
+    
+    // Update time labels
+    document.getElementById('morningTimeLabel').textContent = formatTimeLabel(notificationSettings.morning);
+    document.getElementById('eveningTimeLabel').textContent = formatTimeLabel(notificationSettings.evening);
+}
+
+function formatTimeLabel(time24) {
+    const [h, m] = time24.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${m.toString().padStart(2,'0')} ${period}`;
+}
+
+async function toggleNotifications() {
+    if (notificationSettings.enabled) {
+        // Turn off
+        notificationSettings.enabled = false;
+        saveNotificationSettings();
+        updateNotificationUI();
+        
+        // Unregister service worker notifications
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            if (reg.periodicSync) {
+                try {
+                    await reg.periodicSync.unregister('daily-reminder');
+                } catch(e) {}
+            }
+        }
+        showToast('Reminders disabled');
+    } else {
+        // Turn on - request permission
+        if (!('Notification' in window)) {
+            showToast('Notifications not supported on this browser');
+            return;
+        }
+        
+        // Check if running as PWA (added to home screen)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+            || window.navigator.standalone;
+        
+        if (!isStandalone) {
+            showToast('Add to Home Screen first to enable notifications');
+            return;
+        }
+        
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            notificationSettings.enabled = true;
+            saveNotificationSettings();
+            updateNotificationUI();
+            scheduleNotifications();
+            showToast('Reminders enabled!');
+        } else {
+            showToast('Notification permission denied');
+        }
+    }
+}
+
+let editingReminderType = null;
+
+function openReminderTime(type) {
+    editingReminderType = type;
+    const time = type === 'morning' ? notificationSettings.morning : notificationSettings.evening;
+    document.getElementById('reminderTimeInput').value = time;
+    document.getElementById('reminderTitle').textContent = type === 'morning' ? 'Morning Reminder' : 'Evening Reminder';
+    
+    document.getElementById('reminderOverlay').classList.add('show');
+    document.getElementById('reminderModal').classList.add('show');
+}
+
+function closeReminderTime() {
+    document.getElementById('reminderOverlay').classList.remove('show');
+    document.getElementById('reminderModal').classList.remove('show');
+    editingReminderType = null;
+}
+
+function saveReminderTime() {
+    const time = document.getElementById('reminderTimeInput').value;
+    if (!time) return;
+    
+    if (editingReminderType === 'morning') {
+        notificationSettings.morning = time;
+    } else {
+        notificationSettings.evening = time;
+    }
+    
+    saveNotificationSettings();
+    updateNotificationUI();
+    scheduleNotifications();
+    closeReminderTime();
+    showToast('Reminder time updated');
+}
+
+function scheduleNotifications() {
+    if (!notificationSettings.enabled) return;
+    
+    // Register service worker and schedule
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+            // Send settings to service worker
+            reg.active.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                settings: notificationSettings
+            });
+        });
+    }
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('Service Worker registered');
+        
+        // Listen for messages from SW
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data.type === 'NOTIFICATION_CLICK') {
+                // Bring app to focus
+                window.focus();
+            }
+        });
+    }).catch(err => {
+        console.log('SW registration failed:', err);
+    });
 }
 
 init();
