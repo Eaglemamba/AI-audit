@@ -15,7 +15,7 @@ A mobile-first time tracking PWA that helps you build awareness of how you spend
 - 🔁 **Quick Routines** — Customizable templates for recurring tasks
 - 📅 **Calendar View** — Visual daily timeline
 - 🔔 **Daily Reminders** — Morning & evening notifications (iOS 16.4+)
-- 📝 **Tap to Backfill** — Tap empty time slots to record past activities
+- 📝 **Tap Empty Slot** — Past = backfill, Future = plan new task
 - ↻ **Move Events** — Reschedule tasks to available slots
 - 💾 **Offline Support** — Works without internet
 - 📤 **Export/Import** — Backup your data anytime
@@ -53,10 +53,13 @@ Tap the AIAudit icon to launch.
 2. Tap **▶** to start timer
 3. Tap **⏱** to complete when done
 
-### Backfill Past Time
+### Tap Empty Slot
+**Past slots** → Backfill (record what you did)
+**Future slots** → Plan (create task + schedule)
+
 1. Go to **Today** tab
-2. Tap any **empty time slot**
-3. Enter what you did → **Add**
+2. Tap empty time slot (top half = :00, bottom half = :30)
+3. Fill in details → **Add**
 
 ### Move Tasks
 1. Tap an **incomplete task**

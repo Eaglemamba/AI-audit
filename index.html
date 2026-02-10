@@ -3007,16 +3007,22 @@ body {
     </div>
 </div>
 
-<!-- Backfill Time Slot Modal -->
+<!-- Quick Add Modal (Backfill past / Plan future) -->
 <div class="modal-overlay" id="backfillOverlay" onclick="closeBackfill()"></div>
 <div class="action-sheet" id="backfillSheet">
     <div class="sheet-handle"></div>
     <div class="sheet-content">
-        <div class="sheet-title">Add to <span id="backfillTimeLabel">9:00 AM</span></div>
+        <div class="sheet-title" id="quickAddTitle">Add Past Activity</div>
         <div class="form-group" style="margin-top:16px;">
             <input type="text" class="form-input" id="backfillTaskName" placeholder="What did you do?" style="font-size:16px;">
         </div>
         <div style="display:flex;gap:12px;margin-top:12px;">
+            <div class="form-group" style="flex:1;">
+                <label class="form-label">Start Time</label>
+                <select class="form-input" id="backfillStartTime">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
             <div class="form-group" style="flex:1;">
                 <label class="form-label">Duration</label>
                 <select class="form-input" id="backfillDuration">
@@ -3028,6 +3034,8 @@ body {
                     <option value="120">2 hours</option>
                 </select>
             </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;">
             <div class="form-group" style="flex:1;">
                 <label class="form-label">Category</label>
                 <select class="form-input" id="backfillCategory">
@@ -3038,10 +3046,18 @@ body {
                     <option value="health">Health</option>
                 </select>
             </div>
+            <div class="form-group" style="flex:1;" id="backfillPriorityGroup">
+                <label class="form-label">Priority</label>
+                <select class="form-input" id="backfillPriority">
+                    <option value="high">High</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
         </div>
-        <div style="margin-top:16px;">
+        <div style="margin-top:16px;" id="backfillCompletedRow">
             <label style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);">
-                <input type="checkbox" id="backfillCompleted" style="width:20px;height:20px;">
+                <input type="checkbox" id="backfillCompleted" style="width:20px;height:20px;" checked>
                 Mark as completed
             </label>
         </div>
@@ -3630,27 +3646,78 @@ function handleSlotClick(event, startTime, dateKey) {
     // Don't trigger if clicked on an event
     if (event.target.closest('.event')) return;
     
-    backfillTime = startTime;
+    // Calculate precise time based on click position (30-min increments)
+    const slotElement = event.currentTarget;
+    const rect = slotElement.getBoundingClientRect();
+    const clickY = event.clientY - rect.top;
+    const slotHeight = rect.height;
+    
+    // If clicked in bottom half, add 30 minutes
+    let preciseTime = startTime;
+    if (clickY > slotHeight / 2) {
+        preciseTime = startTime + 30;
+    }
+    
+    backfillTime = preciseTime;
     backfillDate = dateKey;
     
-    // Check if this is a past time slot
+    // Check if this is a past or future time slot
     const now = new Date();
     const isToday = dateKey === formatDateKey(now);
     const nowMins = now.getHours() * 60 + now.getMinutes();
-    const isPast = isToday && startTime < nowMins;
+    const isPast = (dateKey < formatDateKey(now)) || (isToday && preciseTime < nowMins);
+    const isFuture = !isPast;
     
-    // Open backfill sheet
-    const timeStr = formatTime(startTime);
-    const endStr = formatTime(startTime + 30);
+    // Store mode for confirmBackfill
+    window.quickAddMode = isFuture ? 'plan' : 'backfill';
     
-    document.getElementById('backfillTimeLabel').textContent = `${timeStr} - ${endStr}`;
-    document.getElementById('backfillCompleted').checked = isPast; // Pre-check if past
+    // Update UI based on mode
+    if (isFuture) {
+        document.getElementById('quickAddTitle').textContent = 'Plan Activity';
+        document.getElementById('backfillTaskName').placeholder = 'What will you do?';
+        document.getElementById('backfillPriorityGroup').style.display = 'block';
+        document.getElementById('backfillCompletedRow').style.display = 'none';
+    } else {
+        document.getElementById('quickAddTitle').textContent = 'Add Past Activity';
+        document.getElementById('backfillTaskName').placeholder = 'What did you do?';
+        document.getElementById('backfillPriorityGroup').style.display = 'none';
+        document.getElementById('backfillCompletedRow').style.display = 'block';
+        document.getElementById('backfillCompleted').checked = true;
+    }
+    
+    // Populate start time dropdown
+    populateQuickAddTimeOptions(dateKey, isFuture);
+    document.getElementById('backfillStartTime').value = preciseTime;
+    
     document.getElementById('backfillTaskName').value = '';
+    document.getElementById('backfillDuration').value = '30';
+    document.getElementById('backfillCategory').value = 'work';
+    document.getElementById('backfillPriority').value = 'medium';
     
     document.getElementById('backfillOverlay').classList.add('show');
     document.getElementById('backfillSheet').classList.add('show');
     
     setTimeout(() => document.getElementById('backfillTaskName').focus(), 300);
+}
+
+function populateQuickAddTimeOptions(dateKey, isFuture) {
+    const select = document.getElementById('backfillStartTime');
+    const now = new Date();
+    const isToday = dateKey === formatDateKey(now);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    
+    let html = '';
+    for (let mins = WORK_START * 60; mins < WORK_END * 60; mins += 30) {
+        if (isFuture) {
+            // Future: show times from now onwards
+            if (isToday && mins <= nowMins) continue;
+        } else {
+            // Past: show times up to now
+            if (isToday && mins > nowMins) continue;
+        }
+        html += `<option value="${mins}">${formatTime(mins)}</option>`;
+    }
+    select.innerHTML = html;
 }
 
 function closeBackfill() {
@@ -3669,9 +3736,8 @@ function confirmBackfill() {
     
     const duration = parseInt(document.getElementById('backfillDuration').value) || 30;
     const category = document.getElementById('backfillCategory').value || 'work';
-    const markCompleted = document.getElementById('backfillCompleted').checked;
-    
-    const startTime = backfillTime;
+    const priority = document.getElementById('backfillPriority').value || 'medium';
+    const startTime = parseInt(document.getElementById('backfillStartTime').value);
     const endTime = startTime + duration;
     
     // Check for overlap
@@ -3680,44 +3746,83 @@ function confirmBackfill() {
         return;
     }
     
-    // Create event directly (skip task creation for quick backfill)
-    const eventId = 'e' + Date.now();
-    const newEvent = {
-        id: eventId,
-        taskId: null,
-        name: name,
-        category: category,
-        date: backfillDate,
-        start: startTime,
-        end: endTime,
-        priority: 'medium',
-        completed: markCompleted,
-        completedAt: markCompleted ? new Date().toISOString() : null,
-        completionMethod: markCompleted ? 'manual' : null,
-        actual: markCompleted ? duration : null,
-        backfilled: true // Mark as backfilled - excluded from accuracy stats
-    };
+    const mode = window.quickAddMode || 'backfill';
     
-    events.push(newEvent);
-    
-    // If marked completed, add to history (with backfilled flag)
-    if (markCompleted) {
-        completedHistory.push({
+    if (mode === 'plan') {
+        // PLAN MODE: Create task + event (not completed)
+        const taskId = 't' + Date.now();
+        const newTask = {
+            id: taskId,
             name: name,
             category: category,
-            planned: duration,
-            actual: duration,
-            completionMethod: 'manual',
-            completedAt: new Date().toISOString(),
-            backfilled: true // Excluded from accuracy stats
-        });
+            estimatedDuration: duration,
+            priority: priority,
+            createdAt: new Date().toISOString(),
+            scheduled: true
+        };
+        tasks.push(newTask);
+        
+        const eventId = 'e' + Date.now();
+        const newEvent = {
+            id: eventId,
+            taskId: taskId,
+            name: name,
+            category: category,
+            date: backfillDate,
+            start: startTime,
+            end: endTime,
+            estimatedDuration: duration,
+            priority: priority,
+            completed: false
+        };
+        events.push(newEvent);
+        
+        saveData();
+        renderTimeGrid();
+        renderTasks();
+        closeBackfill();
+        showToast('Scheduled');
+        
+    } else {
+        // BACKFILL MODE: Create event only (completed)
+        const markCompleted = document.getElementById('backfillCompleted').checked;
+        
+        const eventId = 'e' + Date.now();
+        const newEvent = {
+            id: eventId,
+            taskId: null,
+            name: name,
+            category: category,
+            date: backfillDate,
+            start: startTime,
+            end: endTime,
+            priority: 'medium',
+            completed: markCompleted,
+            completedAt: markCompleted ? new Date().toISOString() : null,
+            completionMethod: markCompleted ? 'manual' : null,
+            actual: markCompleted ? duration : null,
+            backfilled: true
+        };
+        events.push(newEvent);
+        
+        if (markCompleted) {
+            completedHistory.push({
+                name: name,
+                category: category,
+                planned: duration,
+                actual: duration,
+                date: backfillDate,
+                completionMethod: 'manual',
+                completedAt: new Date().toISOString(),
+                backfilled: true
+            });
+        }
+        
+        saveData();
+        renderTimeGrid();
+        closeBackfill();
+        showToast(markCompleted ? 'Added & completed' : 'Event added');
     }
-    
-    saveData();
-    renderTimeGrid();
-    closeBackfill();
-    
-    showToast(markCompleted ? 'Added & completed' : 'Event added');
 }
 
 function populateTaskSuggestions() {
@@ -6036,10 +6141,11 @@ const HELP_CONTENT = {
                 </div>
             </div>
             <div class="help-section">
-                <div class="help-section-title">📝 Tap to Backfill</div>
+                <div class="help-section-title">📝 Tap Empty Slot</div>
                 <div class="help-text">
-                    Forgot to track something? Tap any <strong>empty time slot</strong> in Today tab.<br>
-                    Enter what you did and mark as completed.
+                    <strong>Past time:</strong> Backfill — record what you did<br>
+                    <strong>Future time:</strong> Plan — creates task + schedules it<br>
+                    Tap top half = :00, bottom half = :30
                 </div>
             </div>
             <div class="help-section">
@@ -6082,7 +6188,11 @@ const HELP_CONTENT = {
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I record something I forgot to track?</div>
-                <div class="faq-a">A: Go to Today tab and tap any <strong>empty time slot</strong>. Enter what you did and mark as completed.</div>
+                <div class="faq-a">A: Go to Today tab and tap any <strong>past empty time slot</strong>. It auto-detects past vs future.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: How do I quickly schedule a new task?</div>
+                <div class="faq-a">A: Tap any <strong>future empty time slot</strong> in Today tab. Task is auto-created and scheduled.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I move a task to a different time?</div>
