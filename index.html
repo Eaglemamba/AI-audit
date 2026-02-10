@@ -864,6 +864,12 @@ body {
 .time-slot.lunch .time-label {
     color: var(--text2);
 }
+.time-slot.past-slot .time-content {
+    cursor: pointer;
+}
+.time-slot.past-slot .time-content:active {
+    background: rgba(0,122,255,0.05);
+}
 
 /* Events */
 .event {
@@ -1721,6 +1727,40 @@ body {
 @keyframes timerPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+}
+
+/* Empty Slots List (Move Event) */
+.empty-slots-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 12px;
+}
+.empty-slot-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.empty-slot-item:active {
+    background: rgba(0,122,255,0.08);
+    border-color: var(--accent);
+}
+.empty-slot-time {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+}
+.empty-slots-empty {
+    text-align: center;
+    color: var(--text2);
+    padding: 24px;
+    font-size: 14px;
 }
 
 /* Event Detail Sheet */
@@ -2610,7 +2650,7 @@ body {
                 </div>
             </div>
 
-            <div class="app-version">AIAudit v1.2</div>
+            <div class="app-version">AIAudit v1.4</div>
         </div>
     </main>
 
@@ -2899,9 +2939,25 @@ body {
 
         <div class="sheet-actions" id="eventActions">
             <button class="sheet-btn timer" id="eventTimerBtn" onclick="toggleEventTimer()">▶ Start</button>
+            <button class="sheet-btn secondary" id="eventMoveBtn" onclick="openMoveEvent()">↻ Move</button>
             <button class="sheet-btn success" onclick="completeEvent()">✓ Complete</button>
             <button class="sheet-btn danger" onclick="deleteEvent()">Delete</button>
             <button class="sheet-btn cancel" onclick="closeEventDetail()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Move Event Modal -->
+<div class="modal-overlay" id="moveEventOverlay" onclick="closeMoveEvent()"></div>
+<div class="action-sheet" id="moveEventSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+        <div class="sheet-title">Move to...</div>
+        <div class="empty-slots-list" id="emptySlotslist">
+            <!-- Populated dynamically -->
+        </div>
+        <div class="sheet-actions" style="margin-top:16px;">
+            <button class="sheet-btn secondary" onclick="closeMoveEvent()">Cancel</button>
         </div>
     </div>
 </div>
@@ -2947,6 +3003,51 @@ body {
         <div class="sheet-actions" style="margin-top: 16px;">
             <button class="sheet-btn primary" onclick="confirmQuickComplete()">Complete Task</button>
             <button class="sheet-btn secondary" onclick="closeQuickComplete()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Backfill Time Slot Modal -->
+<div class="modal-overlay" id="backfillOverlay" onclick="closeBackfill()"></div>
+<div class="action-sheet" id="backfillSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+        <div class="sheet-title">Add to <span id="backfillTimeLabel">9:00 AM</span></div>
+        <div class="form-group" style="margin-top:16px;">
+            <input type="text" class="form-input" id="backfillTaskName" placeholder="What did you do?" style="font-size:16px;">
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;">
+            <div class="form-group" style="flex:1;">
+                <label class="form-label">Duration</label>
+                <select class="form-input" id="backfillDuration">
+                    <option value="15">15 min</option>
+                    <option value="30" selected>30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">1 hour</option>
+                    <option value="90">1.5 hours</option>
+                    <option value="120">2 hours</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label class="form-label">Category</label>
+                <select class="form-input" id="backfillCategory">
+                    <option value="work">Work</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="ai">AI</option>
+                    <option value="personal">Personal</option>
+                    <option value="health">Health</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:16px;">
+            <label style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);">
+                <input type="checkbox" id="backfillCompleted" style="width:20px;height:20px;">
+                Mark as completed
+            </label>
+        </div>
+        <div class="sheet-actions" style="margin-top:20px;">
+            <button class="sheet-btn primary" onclick="confirmBackfill()">Add</button>
+            <button class="sheet-btn secondary" onclick="closeBackfill()">Cancel</button>
         </div>
     </div>
 </div>
@@ -3519,6 +3620,104 @@ function openAddTask() {
     document.getElementById('addTaskSheet').classList.add('show');
     
     setTimeout(() => document.getElementById('taskNameInput').focus(), 300);
+}
+
+// Handle click on empty time slot to backfill
+let backfillTime = null;
+let backfillDate = null;
+
+function handleSlotClick(event, startTime, dateKey) {
+    // Don't trigger if clicked on an event
+    if (event.target.closest('.event')) return;
+    
+    backfillTime = startTime;
+    backfillDate = dateKey;
+    
+    // Check if this is a past time slot
+    const now = new Date();
+    const isToday = dateKey === formatDateKey(now);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const isPast = isToday && startTime < nowMins;
+    
+    // Open backfill sheet
+    const timeStr = formatTime(startTime);
+    const endStr = formatTime(startTime + 30);
+    
+    document.getElementById('backfillTimeLabel').textContent = `${timeStr} - ${endStr}`;
+    document.getElementById('backfillCompleted').checked = isPast; // Pre-check if past
+    document.getElementById('backfillTaskName').value = '';
+    
+    document.getElementById('backfillOverlay').classList.add('show');
+    document.getElementById('backfillSheet').classList.add('show');
+    
+    setTimeout(() => document.getElementById('backfillTaskName').focus(), 300);
+}
+
+function closeBackfill() {
+    document.getElementById('backfillOverlay').classList.remove('show');
+    document.getElementById('backfillSheet').classList.remove('show');
+    backfillTime = null;
+    backfillDate = null;
+}
+
+function confirmBackfill() {
+    const name = document.getElementById('backfillTaskName').value.trim();
+    if (!name) {
+        showToast('Please enter task name');
+        return;
+    }
+    
+    const duration = parseInt(document.getElementById('backfillDuration').value) || 30;
+    const category = document.getElementById('backfillCategory').value || 'work';
+    const markCompleted = document.getElementById('backfillCompleted').checked;
+    
+    const startTime = backfillTime;
+    const endTime = startTime + duration;
+    
+    // Check for overlap
+    if (hasEventOverlap(startTime, endTime, backfillDate, null)) {
+        showToast('Time slot has conflict');
+        return;
+    }
+    
+    // Create event directly (skip task creation for quick backfill)
+    const eventId = 'e' + Date.now();
+    const newEvent = {
+        id: eventId,
+        taskId: null,
+        name: name,
+        category: category,
+        date: backfillDate,
+        start: startTime,
+        end: endTime,
+        priority: 'medium',
+        completed: markCompleted,
+        completedAt: markCompleted ? new Date().toISOString() : null,
+        completionMethod: markCompleted ? 'manual' : null,
+        actual: markCompleted ? duration : null,
+        backfilled: true // Mark as backfilled - excluded from accuracy stats
+    };
+    
+    events.push(newEvent);
+    
+    // If marked completed, add to history (with backfilled flag)
+    if (markCompleted) {
+        completedHistory.push({
+            name: name,
+            category: category,
+            planned: duration,
+            actual: duration,
+            completionMethod: 'manual',
+            completedAt: new Date().toISOString(),
+            backfilled: true // Excluded from accuracy stats
+        });
+    }
+    
+    saveData();
+    renderTimeGrid();
+    closeBackfill();
+    
+    showToast(markCompleted ? 'Added & completed' : 'Event added');
 }
 
 function populateTaskSuggestions() {
@@ -4371,10 +4570,11 @@ function renderTimeGrid() {
     for (let h = WORK_START; h < gridEnd; h++) {
         const slotStart = h * 60;
         const isLunch = h === 12;
+        const isPast = isToday && (h + 1) * 60 <= nowMins;
         html += `
-            <div class="time-slot${isLunch ? ' lunch' : ''}" data-hour="${h}">
+            <div class="time-slot${isLunch ? ' lunch' : ''}${isPast ? ' past-slot' : ''}" data-hour="${h}">
                 <div class="time-label">${h === 0 ? '12' : (h > 12 ? h-12 : h)} ${h >= 12 ? 'PM' : 'AM'}${isLunch ? ' 🍽' : ''}</div>
-                <div class="time-content" data-start="${slotStart}">
+                <div class="time-content" data-start="${slotStart}" onclick="handleSlotClick(event, ${slotStart}, '${dateKey}')">
         `;
         
         // Render events in this hour
@@ -4556,23 +4756,27 @@ function openEventDetail(eventId) {
     // Check timer state
     const isTimerRunning = !!event.startedAt;
     const timerBtn = document.getElementById('eventTimerBtn');
+    const moveBtn = document.getElementById('eventMoveBtn');
     
     // Calculate elapsed time
     let elapsed;
     if (event.completed) {
         elapsed = event.actualDuration || event.estimatedDuration;
         timerBtn.style.display = 'none';
+        moveBtn.style.display = 'none'; // Hide move for completed
     } else if (isTimerRunning) {
         const startTime = new Date(event.startedAt);
         elapsed = Math.round((now - startTime) / 60000);
         timerBtn.innerHTML = '⏸ Stop';
         timerBtn.classList.add('running');
         timerBtn.style.display = 'block';
+        moveBtn.style.display = 'none'; // Hide move while timer running
     } else {
         elapsed = 0;
         timerBtn.innerHTML = '▶ Start';
         timerBtn.classList.remove('running');
         timerBtn.style.display = 'block';
+        moveBtn.style.display = 'block'; // Show move for incomplete events
     }
     
     const diff = elapsed - event.estimatedDuration;
@@ -4675,6 +4879,126 @@ function closeEventDetail() {
     document.getElementById('methodOtherText').value = '';
     selectedEventId = null;
     selectedMethods = new Set(['manual']);
+}
+
+function openMoveEvent() {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event || event.completed) {
+        showToast('Cannot move completed event');
+        return;
+    }
+    
+    const duration = event.end - event.start;
+    const dateKey = event.date;
+    
+    // Find empty slots for today
+    const emptySlots = findEmptySlots(dateKey, duration);
+    
+    const container = document.getElementById('emptySlotslist');
+    
+    if (emptySlots.length === 0) {
+        container.innerHTML = '<div class="empty-slots-empty">No available slots for this duration</div>';
+    } else {
+        let html = '';
+        emptySlots.forEach(slot => {
+            const startStr = formatTime(slot.start);
+            const endStr = formatTime(slot.start + duration);
+            html += `
+                <div class="empty-slot-item" onclick="moveEventToSlot(${slot.start})">
+                    <div class="empty-slot-time">${startStr} - ${endStr}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    
+    document.getElementById('moveEventOverlay').classList.add('show');
+    document.getElementById('moveEventSheet').classList.add('show');
+}
+
+function closeMoveEvent() {
+    document.getElementById('moveEventOverlay').classList.remove('show');
+    document.getElementById('moveEventSheet').classList.remove('show');
+}
+
+function findEmptySlots(dateKey, minDuration) {
+    const dayEvents = events.filter(e => e.date === dateKey && e.id !== selectedEventId);
+    
+    // Sort by start time
+    dayEvents.sort((a, b) => a.start - b.start);
+    
+    const now = new Date();
+    const isToday = dateKey === formatDateKey(now);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    
+    // Start from now (if today) or WORK_START
+    let searchStart = isToday ? Math.max(nowMins, WORK_START * 60) : WORK_START * 60;
+    // Round up to next 15-minute interval
+    searchStart = Math.ceil(searchStart / 15) * 15;
+    
+    const searchEnd = WORK_END * 60;
+    const slots = [];
+    
+    // Find all gaps first
+    const gaps = [];
+    let cursor = searchStart;
+    
+    while (cursor < searchEnd) {
+        // Find next event that starts after cursor
+        const nextEvent = dayEvents.find(e => e.start >= cursor);
+        
+        if (nextEvent) {
+            // Gap between cursor and next event
+            const gapEnd = nextEvent.start;
+            const gapDuration = gapEnd - cursor;
+            
+            if (gapDuration >= minDuration) {
+                gaps.push({ start: cursor, end: gapEnd });
+            }
+            
+            // Move cursor past this event
+            cursor = nextEvent.end;
+        } else {
+            // No more events, rest of day is free
+            const gapDuration = searchEnd - cursor;
+            if (gapDuration >= minDuration) {
+                gaps.push({ start: cursor, end: searchEnd });
+            }
+            break;
+        }
+    }
+    
+    // Break down large gaps into 30-minute increments
+    gaps.forEach(gap => {
+        let slotStart = gap.start;
+        while (slotStart + minDuration <= gap.end) {
+            slots.push({ start: slotStart, end: gap.end });
+            slotStart += 30; // 30-minute increments
+            
+            // Limit to 10 options per gap to avoid overwhelming
+            if (slots.length >= 10) break;
+        }
+    });
+    
+    return slots.slice(0, 10); // Max 10 total options
+}
+
+function moveEventToSlot(newStart) {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+    
+    const duration = event.end - event.start;
+    
+    // Update event time
+    event.start = newStart;
+    event.end = newStart + duration;
+    
+    saveData();
+    renderTimeGrid();
+    closeMoveEvent();
+    closeEventDetail();
+    
+    showToast(`Moved to ${formatTime(newStart)}`);
 }
 
 function adjustEventTime(delta) {
@@ -4947,13 +5271,16 @@ function renderStats() {
     weekStart.setDate(today.getDate() - today.getDay()); // Sunday
     const weekKey = formatDateKey(weekStart);
     
-    const thisWeek = completedHistory.filter(h => h.date >= weekKey);
+    // Exclude backfilled items from accuracy calculations
+    const trackableHistory = completedHistory.filter(h => !h.backfilled);
+    
+    const thisWeek = trackableHistory.filter(h => h.date >= weekKey);
     
     // Separate AI vs Manual/N/A tasks
     const aiTasks = [];
     const manualTasks = [];
     
-    completedHistory.forEach(h => {
+    trackableHistory.forEach(h => {
         const methods = h.methods || (h.method ? [h.method] : ['manual']);
         // AI = any method that's not manual and not na
         if (methods.some(m => m !== 'manual' && m !== 'na')) {
@@ -4976,12 +5303,12 @@ function renderStats() {
     // Render AI Hero with repeated task tracking
     renderAiHero(aiTasks.length, manualTasks.length);
     
-    // Time by category
-    renderCategoryTimeChart(thisWeek);
+    // Time by category (use all history including backfilled for time tracking)
+    renderCategoryTimeChart(completedHistory.filter(h => h.date >= weekKey));
     
     // Summary stats (updated)
     document.getElementById('statCompleted').textContent = thisWeek.length;
-    document.getElementById('statTotalTime').textContent = formatDuration(thisWeek.reduce((s, h) => s + h.actual, 0));
+    document.getElementById('statTotalTime').textContent = formatDuration(completedHistory.filter(h => h.date >= weekKey).reduce((s, h) => s + h.actual, 0));
     document.getElementById('statAiTasks').textContent = weekAiTasks.length;
     document.getElementById('statManualTasks').textContent = weekManualTasks.length;
     
@@ -5000,9 +5327,10 @@ function renderAiHero(totalAi, totalManual) {
     const total = totalAi + totalManual;
     const aiPct = total > 0 ? Math.round((totalAi / total) * 100) : 0;
     
-    // Find repeated tasks (same name appears >= 2 times)
+    // Find repeated tasks (same name appears >= 2 times) - exclude backfilled
+    const trackableHistory = completedHistory.filter(h => !h.backfilled);
     const tasksByName = {};
-    completedHistory.forEach(h => {
+    trackableHistory.forEach(h => {
         const name = h.name.trim().toLowerCase();
         if (!tasksByName[name]) {
             tasksByName[name] = [];
@@ -5164,9 +5492,10 @@ function renderCategoryTimeChart(data) {
 function renderMethodStats() {
     const container = document.getElementById('methodStats');
     
-    // Group by method (exclude manual, focus on AI tools)
+    // Group by method (exclude backfilled for accuracy tracking)
+    const trackableHistory = completedHistory.filter(h => !h.backfilled);
     const methodStats = {};
-    completedHistory.forEach(h => {
+    trackableHistory.forEach(h => {
         const methods = h.methods || (h.method ? [h.method] : ['manual']);
         methods.forEach(method => {
             if (!methodStats[method]) {
@@ -5227,12 +5556,15 @@ function renderMethodStats() {
 function renderInsights() {
     const insights = [];
     
-    if (completedHistory.length === 0) {
+    // Exclude backfilled for insights
+    const trackableHistory = completedHistory.filter(h => !h.backfilled);
+    
+    if (trackableHistory.length === 0) {
         insights.push({ icon: '💡', text: 'Complete tasks to see insights' });
     } else {
         // Find repeated tasks for insights
         const tasksByName = {};
-        completedHistory.forEach(h => {
+        trackableHistory.forEach(h => {
             const name = h.name.trim().toLowerCase();
             if (!tasksByName[name]) {
                 tasksByName[name] = { name: h.name, records: [] };
@@ -5329,46 +5661,52 @@ function renderWeeklyReport() {
     weekStart.setDate(today.getDate() - today.getDay());
     const weekKey = formatDateKey(weekStart);
     
-    const thisWeek = completedHistory.filter(h => h.date >= weekKey);
+    // Include all for time tracking
+    const thisWeekAll = completedHistory.filter(h => h.date >= weekKey);
+    // Exclude backfilled for AI/efficiency tracking
+    const thisWeek = thisWeekAll.filter(h => !h.backfilled);
     
-    // Last week's data for comparison
+    // Last week's data for comparison (exclude backfilled)
     const lastWeekStart = new Date(weekStart);
     lastWeekStart.setDate(lastWeekStart.getDate() - 7);
     const lastWeekEnd = new Date(weekStart);
     lastWeekEnd.setDate(lastWeekEnd.getDate() - 1);
     const lastWeek = completedHistory.filter(h => 
-        h.date >= formatDateKey(lastWeekStart) && h.date <= formatDateKey(lastWeekEnd)
+        h.date >= formatDateKey(lastWeekStart) && h.date <= formatDateKey(lastWeekEnd) && !h.backfilled
     );
     
-    if (thisWeek.length === 0) {
+    if (thisWeekAll.length === 0) {
         container.innerHTML = '<div class="report-empty">No tasks completed this week<br>Start tracking to generate report</div>';
         return;
     }
     
-    // Calculate stats
-    const totalTasks = thisWeek.length;
-    const totalTime = thisWeek.reduce((s, h) => s + h.actual, 0);
+    // Calculate stats (use all for time totals)
+    const totalTasks = thisWeekAll.length;
+    const totalTime = thisWeekAll.reduce((s, h) => s + h.actual, 0);
     
-    // Compare with last week
-    const lastWeekTime = lastWeek.reduce((s, h) => s + h.actual, 0);
+    // Compare with last week (all for time)
+    const lastWeekAll = completedHistory.filter(h => 
+        h.date >= formatDateKey(lastWeekStart) && h.date <= formatDateKey(lastWeekEnd)
+    );
+    const lastWeekTime = lastWeekAll.reduce((s, h) => s + h.actual, 0);
     const timeDiff = totalTime - lastWeekTime;
-    const timeDiffText = lastWeek.length > 0 
+    const timeDiffText = lastWeekAll.length > 0 
         ? (timeDiff >= 0 
             ? `<span class="report-value positive">↑${formatDuration(timeDiff)}</span>` 
             : `<span class="report-value negative">↓${formatDuration(Math.abs(timeDiff))}</span>`)
         : '';
     
-    // AI usage (exclude N/A health tasks)
+    // AI usage (exclude backfilled and N/A health tasks)
     let aiCount = 0;
     thisWeek.forEach(h => {
         const methods = h.methods || (h.method ? [h.method] : ['manual']);
         if (methods.some(m => m !== 'manual' && m !== 'na')) aiCount++;
     });
-    const aiRate = Math.round((aiCount / totalTasks) * 100);
+    const aiRate = thisWeek.length > 0 ? Math.round((aiCount / thisWeek.length) * 100) : 0;
     
-    // Time by category
+    // Time by category (use all for time tracking)
     const catTime = {};
-    thisWeek.forEach(h => {
+    thisWeekAll.forEach(h => {
         const cat = h.category || 'work';
         catTime[cat] = (catTime[cat] || 0) + h.actual;
     });
@@ -5698,17 +6036,24 @@ const HELP_CONTENT = {
                 </div>
             </div>
             <div class="help-section">
-                <div class="help-section-title">📊 Stats Tab</div>
+                <div class="help-section-title">📝 Tap to Backfill</div>
                 <div class="help-text">
-                    Track repeated task efficiency over time.<br>
-                    See AI vs Manual ratio and get improvement suggestions.
+                    Forgot to track something? Tap any <strong>empty time slot</strong> in Today tab.<br>
+                    Enter what you did and mark as completed.
                 </div>
             </div>
             <div class="help-section">
-                <div class="help-section-title">📝 Notes</div>
+                <div class="help-section-title">↻ Move Events</div>
                 <div class="help-text">
-                    Tap any event to open details panel.<br>
-                    Add notes that are saved automatically.
+                    Tap any incomplete event → <strong>↻ Move</strong><br>
+                    Select from available time slots to reschedule.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">🔁 Quick Routines</div>
+                <div class="help-text">
+                    Tap + to add task, then <strong>long-press</strong> any Quick Routine button to customize.<br>
+                    Change icon, name, category, and duration.
                 </div>
             </div>
             <div class="help-section">
@@ -5716,8 +6061,14 @@ const HELP_CONTENT = {
                 <div class="help-text">
                     <strong>▶</strong> Tap play button to start timer.<br>
                     <strong>⏱</strong> Tap timer icon to complete.<br>
-                    Select completion method (Manual, Claude, etc.)<br>
-                    Health tasks show N/A option only.
+                    Select completion method (Manual, Claude, etc.)
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">📊 Stats Tab</div>
+                <div class="help-text">
+                    Track repeated task efficiency over time.<br>
+                    See AI vs Manual ratio and get improvement suggestions.
                 </div>
             </div>
         `
@@ -5730,20 +6081,24 @@ const HELP_CONTENT = {
                 <div class="faq-a">A: A <strong>Task</strong> is a to-do item you create. An <strong>Event</strong> is when you schedule a task to a specific time slot. Task → Schedule → Event.</div>
             </div>
             <div class="faq-item">
+                <div class="faq-q">Q: How do I record something I forgot to track?</div>
+                <div class="faq-a">A: Go to Today tab and tap any <strong>empty time slot</strong>. Enter what you did and mark as completed.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: How do I move a task to a different time?</div>
+                <div class="faq-a">A: Tap the incomplete event → <strong>↻ Move</strong> → Select a new time slot.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: How do I customize Quick Routines?</div>
+                <div class="faq-a">A: Tap + to add task, then <strong>long-press</strong> any Quick Routine button to edit icon, name, category, and duration.</div>
+            </div>
+            <div class="faq-item">
                 <div class="faq-q">Q: Where is my data stored?</div>
                 <div class="faq-a">A: All data is stored locally in your browser (localStorage). It won't sync across devices automatically - use Export/Import for that.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I sync between devices?</div>
                 <div class="faq-a">A: Go to More → Export Backup, upload to Google Drive/Dropbox, then Import on your other device.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-q">Q: What does the app track?</div>
-                <div class="faq-a">A: It tracks time spent on each task, broken down by category and how you completed it (Manual, Claude, ChatGPT, etc.).</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-q">Q: Why can't I see late evening time slots?</div>
-                <div class="faq-a">A: Time slots are available from 5am to 11pm. If scheduling today, slots start from the current time.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I delete a task or event?</div>
@@ -6350,8 +6705,8 @@ function scheduleNotifications() {
     }
 }
 
-// Register service worker
-if ('serviceWorker' in navigator) {
+// Register service worker (only on HTTPS/GitHub Pages)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js').then(reg => {
         console.log('Service Worker registered');
         
@@ -6363,7 +6718,7 @@ if ('serviceWorker' in navigator) {
             }
         });
     }).catch(err => {
-        console.log('SW registration failed:', err);
+        // Silent fail - notifications just won't work
     });
 }
 

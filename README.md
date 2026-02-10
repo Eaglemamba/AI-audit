@@ -12,9 +12,11 @@ A mobile-first time tracking PWA that helps you build awareness of how you spend
 
 - ⏱️ **One-tap Timer** — Start tracking instantly
 - 📊 **Time Distribution** — See where your time goes
-- 🔁 **Quick Routines** — Templates for recurring tasks
+- 🔁 **Quick Routines** — Customizable templates for recurring tasks
 - 📅 **Calendar View** — Visual daily timeline
-- 🔔 **Daily Reminders** — Morning & evening notifications
+- 🔔 **Daily Reminders** — Morning & evening notifications (iOS 16.4+)
+- 📝 **Tap to Backfill** — Tap empty time slots to record past activities
+- ↻ **Move Events** — Reschedule tasks to available slots
 - 💾 **Offline Support** — Works without internet
 - 📤 **Export/Import** — Backup your data anytime
 
@@ -24,7 +26,9 @@ A mobile-first time tracking PWA that helps you build awareness of how you spend
 
 ### Step 1: Open in Safari (iPhone) or Chrome (Android)
 
+```
 https://eaglemamba.github.io/AI-audit/
+```
 
 ### Step 2: Add to Home Screen
 
@@ -39,6 +43,30 @@ https://eaglemamba.github.io/AI-audit/
 ### Step 3: Open from Home Screen
 
 Tap the AIAudit icon to launch.
+
+---
+
+## Quick Guide
+
+### Track Time
+1. Tap **+** to add a task
+2. Tap **▶** to start timer
+3. Tap **⏱** to complete when done
+
+### Backfill Past Time
+1. Go to **Today** tab
+2. Tap any **empty time slot**
+3. Enter what you did → **Add**
+
+### Move Tasks
+1. Tap an **incomplete task**
+2. Tap **↻ Move**
+3. Select a new time slot
+
+### Customize Quick Routines
+1. Tap **+** to open Add Task
+2. **Long-press** any Quick Routine button
+3. Edit icon, name, category, duration
 
 ---
 
@@ -64,7 +92,7 @@ Tap the AIAudit icon to launch.
 
 ### 1. Create GitHub Repository
 
-- Go to github.com → New repository
+- Go to [github.com](https://github.com) → New repository
 - Name: `aiaudit` (or any name)
 - Visibility: **Public**
 
@@ -86,7 +114,9 @@ Upload these 3 files to repository root:
 
 ### 4. Access Your App
 
+```
 https://YOUR-USERNAME.github.io/YOUR-REPO/
+```
 
 ---
 
@@ -130,5 +160,4 @@ MIT License - Free to use and modify.
 
 ## Version
 
-**v1.2** | February 2026
-
+**v1.4** | February 2026
