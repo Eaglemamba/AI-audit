@@ -2939,7 +2939,7 @@ body {
 
         <div class="sheet-actions" id="eventActions">
             <button class="sheet-btn timer" id="eventTimerBtn" onclick="toggleEventTimer()">▶ Start</button>
-            <button class="sheet-btn secondary" id="eventMoveBtn" onclick="openMoveEvent()">↻ Move</button>
+            <button class="sheet-btn secondary" id="eventMoveBtn" onclick="openMoveEvent()">↻ Reschedule</button>
             <button class="sheet-btn success" onclick="completeEvent()">✓ Complete</button>
             <button class="sheet-btn danger" onclick="deleteEvent()">Delete</button>
             <button class="sheet-btn cancel" onclick="closeEventDetail()">Cancel</button>
@@ -2952,7 +2952,7 @@ body {
 <div class="action-sheet" id="moveEventSheet">
     <div class="sheet-handle"></div>
     <div class="sheet-content">
-        <div class="sheet-title">Move to...</div>
+        <div class="sheet-title">Reschedule to...</div>
         <div class="empty-slots-list" id="emptySlotslist">
             <!-- Populated dynamically -->
         </div>
@@ -3755,6 +3755,7 @@ function confirmBackfill() {
             id: taskId,
             name: name,
             category: category,
+            duration: duration,
             estimatedDuration: duration,
             priority: priority,
             createdAt: new Date().toISOString(),
@@ -6098,28 +6099,30 @@ const HELP_CONTENT = {
         title: '🚀 Quick Start',
         html: `
             <div class="help-section">
-                <div class="help-section-title">Step 1: Add a Task</div>
+                <div class="help-section-title">Fastest Way: Tap Empty Slot</div>
                 <div class="help-text">
-                    Tap <strong>+</strong> to create a new task.<br>
-                    Enter name, select category, and estimate duration.
+                    Go to <strong>Today</strong> tab.<br>
+                    Tap any empty time slot → Fill in details → <strong>Add</strong><br>
+                    Past slots = record what you did<br>
+                    Future slots = plan what you'll do
                 </div>
             </div>
             <div class="help-section">
-                <div class="help-section-title">Step 2: Schedule It</div>
+                <div class="help-section-title">Alternative: Tasks Tab</div>
                 <div class="help-text">
-                    Tap task → Select a time slot → <strong>Schedule</strong><br>
-                    The task appears in your Today calendar as an event.
+                    Tap <strong>+</strong> → Create task → Tap to schedule<br>
+                    Good for tasks you want to do later.
                 </div>
             </div>
             <div class="help-section">
-                <div class="help-section-title">Step 3: Track & Complete</div>
+                <div class="help-section-title">Track & Complete</div>
                 <div class="help-text">
-                    Tap <strong>▶</strong> to start the timer.<br>
-                    When done, tap <strong>⏱</strong> to complete.<br>
-                    Select how you completed (Manual, Claude, ChatGPT, etc.)
+                    <strong>▶</strong> Start timer<br>
+                    <strong>⏱</strong> Complete when done<br>
+                    Select how you completed (Manual, Claude, etc.)
                 </div>
             </div>
-            <div class="help-tip">💡 Track your time to see how AI tools change your workflow!</div>
+            <div class="help-tip">💡 Tap top half of slot = :00, bottom half = :30</div>
         `
     },
     features: {
@@ -6149,9 +6152,9 @@ const HELP_CONTENT = {
                 </div>
             </div>
             <div class="help-section">
-                <div class="help-section-title">↻ Move Events</div>
+                <div class="help-section-title">↻ Reschedule Events</div>
                 <div class="help-text">
-                    Tap any incomplete event → <strong>↻ Move</strong><br>
+                    Tap any incomplete event → <strong>↻ Reschedule</strong><br>
                     Select from available time slots to reschedule.
                 </div>
             </div>
@@ -6196,7 +6199,7 @@ const HELP_CONTENT = {
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I move a task to a different time?</div>
-                <div class="faq-a">A: Tap the incomplete event → <strong>↻ Move</strong> → Select a new time slot.</div>
+                <div class="faq-a">A: Tap the incomplete event → <strong>↻ Reschedule</strong> → Select a new time slot.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I customize Quick Routines?</div>
