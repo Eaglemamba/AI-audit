@@ -1033,14 +1033,13 @@ body {
     background: var(--card);
     border-radius: 16px;
     padding: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 .stats-card-title {
-    font-size: 13px;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
 }
 
 /* Category Time Chart */
@@ -1114,18 +1113,18 @@ body {
 
 /* AI Hero Section */
 .ai-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--card);
+    border: 1px solid var(--border);
 }
 .ai-hero .stats-card-title {
-    color: rgba(255,255,255,0.9);
+    color: var(--text);
 }
 .ai-hero-content {
     padding: 8px 0;
 }
 .ai-hero-title {
     font-size: 13px;
-    opacity: 0.85;
+    color: var(--text2);
     margin-bottom: 12px;
 }
 .ai-hero-summary {
@@ -1140,22 +1139,23 @@ body {
 .ai-hero-stat-large .ai-hero-stat-value {
     font-size: 36px;
     font-weight: 700;
+    color: var(--accent);
 }
 .ai-hero-stat-large .ai-hero-stat-label {
     font-size: 13px;
-    opacity: 0.8;
+    color: var(--text2);
     margin-top: 4px;
 }
 .ai-hero-hint {
     text-align: center;
     font-size: 12px;
-    opacity: 0.7;
+    color: var(--text2);
     margin-bottom: 16px;
 }
 .ai-hero-empty {
     text-align: center;
     font-size: 14px;
-    opacity: 0.8;
+    color: var(--text2);
     padding: 20px 0;
 }
 /* Repeated Tasks Tracking */
@@ -1164,7 +1164,7 @@ body {
 }
 .ai-task-row {
     padding: 10px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid var(--border);
 }
 .ai-task-row:last-child {
     border-bottom: none;
@@ -1178,6 +1178,7 @@ body {
 .ai-task-name {
     font-size: 14px;
     font-weight: 600;
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1185,8 +1186,8 @@ body {
 }
 .ai-task-count {
     font-size: 11px;
-    opacity: 0.7;
-    background: rgba(255,255,255,0.15);
+    color: var(--text2);
+    background: var(--bg);
     padding: 2px 6px;
     border-radius: 4px;
 }
@@ -1195,25 +1196,26 @@ body {
 }
 .ai-task-bar {
     height: 6px;
-    background: rgba(255,255,255,0.2);
+    background: var(--bg);
     border-radius: 3px;
     overflow: hidden;
     margin-bottom: 4px;
 }
 .ai-task-fill {
     height: 100%;
-    background: #fbbf24;
+    background: var(--warning);
     border-radius: 3px;
     transition: width 0.5s ease;
 }
 .ai-task-fill.improved {
-    background: #4ade80;
+    background: var(--success);
 }
 .ai-task-times {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 13px;
+    color: var(--text2);
 }
 .ai-task-diff {
     font-size: 11px;
@@ -1223,32 +1225,32 @@ body {
     margin-left: auto;
 }
 .ai-task-diff.faster {
-    background: rgba(74, 222, 128, 0.3);
-    color: #4ade80;
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--success);
 }
 .ai-task-diff.slower {
-    background: rgba(251, 191, 36, 0.3);
-    color: #fbbf24;
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--warning);
 }
 .ai-task-methods {
     font-size: 11px;
-    opacity: 0.6;
+    color: var(--text2);
 }
 /* Ratio Section */
 .ai-ratio-section {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid var(--border);
 }
 .ai-ratio-bar {
     height: 8px;
-    background: rgba(255,255,255,0.2);
+    background: var(--bg);
     border-radius: 4px;
     overflow: hidden;
 }
 .ai-ratio-fill {
     height: 100%;
-    background: #4ade80;
+    background: var(--success);
     border-radius: 4px;
     transition: width 0.5s ease;
 }
@@ -1256,13 +1258,13 @@ body {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    opacity: 0.8;
+    color: var(--text2);
     margin-top: 6px;
 }
 
 /* Insights Card */
 .insights-card {
-    border-left: 4px solid var(--accent);
+    background: var(--card);
 }
 
 /* Stats Grid */
@@ -1272,7 +1274,7 @@ body {
     gap: 12px;
 }
 .stat-item {
-    background: rgba(0,0,0,0.02);
+    background: var(--bg);
     border-radius: 12px;
     padding: 16px;
     text-align: center;
@@ -1280,7 +1282,7 @@ body {
 .stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text);
+    color: var(--accent);
 }
 .stat-label {
     font-size: 12px;
@@ -2504,15 +2506,15 @@ body {
         <div class="tab-content" id="tabStats">
             <!-- AI Efficiency Hero -->
             <div class="stats-card ai-hero">
-                <div class="stats-card-title">🤖 AI Efficiency</div>
+                <div class="stats-card-title">AI Efficiency</div>
                 <div class="ai-hero-content" id="aiHeroContent">
                     <!-- Dynamic content rendered by renderAiHero() -->
                 </div>
             </div>
 
-            <!-- Insights - More Prominent -->
+            <!-- Insights -->
             <div class="stats-card insights-card">
-                <div class="stats-card-title">💡 Insights</div>
+                <div class="stats-card-title">Insights</div>
                 <div id="insightsList"></div>
             </div>
 
@@ -2547,7 +2549,7 @@ body {
 
             <!-- Weekly Report -->
             <div class="stats-card weekly-report" id="weeklyReport">
-                <div class="stats-card-title">📊 Weekly Report</div>
+                <div class="stats-card-title">Weekly Report</div>
                 <div id="weeklyReportContent"></div>
             </div>
 
@@ -2555,6 +2557,13 @@ body {
             <div class="stats-card">
                 <div class="stats-card-title">AI Tool Usage</div>
                 <div id="methodStats"></div>
+            </div>
+
+            <!-- AI Insights CTA -->
+            <div class="stats-card" style="text-align:center;padding:20px;">
+                <button onclick="exportForAI()" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:transparent;color:var(--text2);border:1px solid var(--border);padding:12px 20px;border-radius:8px;font-size:14px;cursor:pointer;">
+                    <span>Get AI Analysis →</span>
+                </button>
             </div>
         </div>
 
@@ -2594,11 +2603,6 @@ body {
                 <div class="more-item" onclick="document.getElementById('importFile').click()">
                     <span class="more-icon">📥</span>
                     <span class="more-label">Import Backup</span>
-                    <span class="more-arrow">›</span>
-                </div>
-                <div class="more-item" onclick="openSyncUrl()">
-                    <span class="more-icon">🔗</span>
-                    <span class="more-label">Sync from URL</span>
                     <span class="more-arrow">›</span>
                 </div>
                 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
@@ -3157,33 +3161,6 @@ body {
     </div>
 </div>
 
-<!-- Sync URL Modal -->
-<div class="help-overlay" id="syncOverlay" onclick="closeSyncOverlay()"></div>
-<div class="help-modal" id="syncModal">
-    <div class="help-header">
-        <div class="help-title">Sync from URL</div>
-        <button class="help-close" onclick="closeSyncUrl()">×</button>
-    </div>
-    <div class="help-body">
-        <div class="help-section">
-            <div class="help-section-title">How it works</div>
-            <div class="help-text">
-                1. Export your backup and upload to Google Drive<br>
-                2. Get a shareable link (anyone with link can view)<br>
-                3. Paste the link below to sync
-            </div>
-        </div>
-        <div class="help-section">
-            <div class="help-section-title">Backup URL</div>
-            <div class="sync-input-group">
-                <input type="text" class="sync-input" id="syncUrlInput" placeholder="https://drive.google.com/...">
-                <button class="sync-btn" onclick="loadFromUrl()">Sync</button>
-            </div>
-            <div class="help-tip">💡 For Google Drive: Change /view to /uc?export=download in URL</div>
-        </div>
-    </div>
-</div>
-
 <!-- Reminder Time Modal -->
 <div class="help-overlay" id="reminderOverlay" onclick="closeReminderTime()"></div>
 <div class="help-modal" id="reminderModal" style="max-width:300px;">
@@ -3203,6 +3180,7 @@ body {
     </div>
 </div>
 
+<div class="help-overlay" id="aiAnalysisOverlay" onclick="closeAIAnalysis()"></div>
 <div class="help-modal" id="aiAnalysisModal" style="max-width:500px;">
     <div class="help-header">
         <div class="help-title">AI Analysis Prompt</div>
@@ -5864,61 +5842,37 @@ const onboardingSteps = [
     {
         icon: '⏱',
         title: 'Welcome to AIAudit',
-        desc: 'Know where your time goes. Track tasks, compare AI vs Manual, and get suggestions to work smarter.',
+        desc: 'Know where your time goes. Track what you do, see patterns, work smarter.',
         content: `
             <div class="onboarding-concept" style="margin-top:16px;">
                 <div class="onboarding-concept-item">
                     <div class="onboarding-concept-icon">📊</div>
-                    <div class="onboarding-concept-title">Time Audit</div>
-                    <div class="onboarding-concept-desc">See how you spend your time by category.</div>
+                    <div class="onboarding-concept-title">Time Awareness</div>
+                    <div class="onboarding-concept-desc">See how you actually spend your time.</div>
                 </div>
                 <div class="onboarding-concept-item">
                     <div class="onboarding-concept-icon">🤖</div>
-                    <div class="onboarding-concept-title">AI Insights</div>
-                    <div class="onboarding-concept-desc">Find tasks where AI can save you time.</div>
+                    <div class="onboarding-concept-title">AI Tracking</div>
+                    <div class="onboarding-concept-desc">Compare AI-assisted vs manual work.</div>
                 </div>
             </div>
         `
     },
     {
-        icon: '📝',
-        title: 'Task vs Event',
-        desc: 'Understand the two core concepts:',
-        content: `
-            <div class="onboarding-concept">
-                <div class="onboarding-concept-item">
-                    <div class="onboarding-concept-icon">📋</div>
-                    <div class="onboarding-concept-title">Task</div>
-                    <div class="onboarding-concept-desc">A to-do item you create. Lives in the Tasks tab until scheduled.</div>
-                </div>
-                <div class="onboarding-concept-item">
-                    <div class="onboarding-concept-icon">📅</div>
-                    <div class="onboarding-concept-title">Event</div>
-                    <div class="onboarding-concept-desc">A scheduled time block. Shows up in Today's calendar view.</div>
-                </div>
-            </div>
-        `
-    },
-    {
-        icon: '🔄',
-        title: 'The Flow',
-        desc: 'Create a task, schedule it, then track your time:',
+        icon: '👆',
+        title: 'Tap Empty Slot',
+        desc: 'The fastest way to track your time:',
         content: `
             <div class="onboarding-diagram">
-                <div class="onboarding-flow">
-                    <div class="onboarding-flow-item">
-                        <div class="onboarding-flow-box">Create Task</div>
-                        <div class="onboarding-flow-label">Tasks tab</div>
+                <div class="onboarding-flow" style="flex-direction:column;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="onboarding-flow-box highlight">Tap empty slot</div>
+                        <div style="color:var(--text2);font-size:13px;">in Today tab</div>
                     </div>
-                    <div class="onboarding-flow-arrow">→</div>
-                    <div class="onboarding-flow-item">
-                        <div class="onboarding-flow-box">Schedule</div>
-                        <div class="onboarding-flow-label">Pick time</div>
-                    </div>
-                    <div class="onboarding-flow-arrow">→</div>
-                    <div class="onboarding-flow-item">
-                        <div class="onboarding-flow-box highlight">Track</div>
-                        <div class="onboarding-flow-label">Today tab</div>
+                    <div style="font-size:13px;color:var(--text2);text-align:left;line-height:1.6;">
+                        <strong>Past time</strong> → Record what you did<br>
+                        <strong>Future time</strong> → Plan what you'll do<br>
+                        <strong>Tip:</strong> Top half = :00, bottom half = :30
                     </div>
                 </div>
             </div>
@@ -5926,8 +5880,8 @@ const onboardingSteps = [
     },
     {
         icon: '⏱',
-        title: 'One-Click Timer',
-        desc: 'Start and complete tasks with a single tap:',
+        title: 'Track & Complete',
+        desc: 'Start and complete with a single tap:',
         content: `
             <div class="onboarding-timer-demo">
                 <div class="onboarding-timer-step">
@@ -5938,6 +5892,28 @@ const onboardingSteps = [
                 <div class="onboarding-timer-step">
                     <div class="onboarding-timer-btn timing">⏱</div>
                     <div class="onboarding-timer-label">Tap to complete</div>
+                </div>
+            </div>
+            <div style="margin-top:12px;font-size:13px;color:var(--text2);">
+                Select how you completed: Manual, Claude, ChatGPT, etc.
+            </div>
+        `
+    },
+    {
+        icon: '📊',
+        title: 'See Your Patterns',
+        desc: 'Stats tab shows your time insights:',
+        content: `
+            <div class="onboarding-concept">
+                <div class="onboarding-concept-item">
+                    <div class="onboarding-concept-icon">📈</div>
+                    <div class="onboarding-concept-title">Time Distribution</div>
+                    <div class="onboarding-concept-desc">Where does your time actually go?</div>
+                </div>
+                <div class="onboarding-concept-item">
+                    <div class="onboarding-concept-icon">🤖</div>
+                    <div class="onboarding-concept-title">AI Insights</div>
+                    <div class="onboarding-concept-desc">Export data for Claude/ChatGPT analysis.</div>
                 </div>
             </div>
         `
@@ -6186,8 +6162,8 @@ const HELP_CONTENT = {
         title: '❓ FAQ',
         html: `
             <div class="faq-item">
-                <div class="faq-q">Q: What's the difference between Task and Event?</div>
-                <div class="faq-a">A: A <strong>Task</strong> is a to-do item you create. An <strong>Event</strong> is when you schedule a task to a specific time slot. Task → Schedule → Event.</div>
+                <div class="faq-q">Q: What's the fastest way to start?</div>
+                <div class="faq-a">A: Go to <strong>Today</strong> tab and tap any empty time slot. That's it!</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I record something I forgot to track?</div>
@@ -6285,60 +6261,6 @@ function importBackup(e) {
     };
     reader.readAsText(file);
     e.target.value = ''; // Reset input
-}
-
-function openSyncUrl() {
-    document.getElementById('syncOverlay').classList.add('show');
-    document.getElementById('syncModal').classList.add('show');
-}
-
-function closeSyncUrl() {
-    document.getElementById('syncOverlay').classList.remove('show');
-    document.getElementById('syncModal').classList.remove('show');
-}
-
-function closeSyncOverlay() {
-    document.getElementById('syncOverlay').classList.remove('show');
-    document.getElementById('syncModal').classList.remove('show');
-    document.getElementById('aiAnalysisModal').classList.remove('show');
-}
-
-function loadFromUrl() {
-    let url = document.getElementById('syncUrlInput').value.trim();
-    if (!url) {
-        showToast('Please enter a URL');
-        return;
-    }
-    
-    // Convert Google Drive view URL to direct download
-    if (url.includes('drive.google.com') && url.includes('/view')) {
-        url = url.replace('/view', '/uc?export=download');
-    }
-    
-    showToast('Loading...');
-    
-    fetch(url)
-        .then(res => {
-            if (!res.ok) throw new Error('Failed to fetch');
-            return res.json();
-        })
-        .then(backup => {
-            if (backup.tasks) tasks = backup.tasks;
-            if (backup.events) events = backup.events;
-            if (backup.completedHistory) completedHistory = backup.completedHistory;
-            
-            saveData();
-            renderTasks();
-            renderTimeGrid();
-            renderStats();
-            closeSyncUrl();
-            
-            showToast('Synced successfully!');
-        })
-        .catch(err => {
-            showToast('Failed to sync. Check URL.');
-            console.error(err);
-        });
 }
 
 // ══════════════════════════════════════
@@ -6480,12 +6402,12 @@ ${summary.tasks.map(t => `[${t.date}] ${t.name} (${t.category}) | ${t.duration} 
 5. **Specific Recommendations**: Give me 3 actionable changes to improve productivity.`;
 
     document.getElementById('aiPromptText').value = prompt;
-    document.getElementById('syncOverlay').classList.add('show');
+    document.getElementById('aiAnalysisOverlay').classList.add('show');
     document.getElementById('aiAnalysisModal').classList.add('show');
 }
 
 function closeAIAnalysis() {
-    document.getElementById('syncOverlay').classList.remove('show');
+    document.getElementById('aiAnalysisOverlay').classList.remove('show');
     document.getElementById('aiAnalysisModal').classList.remove('show');
 }
 
