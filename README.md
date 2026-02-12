@@ -59,7 +59,7 @@ Tap the AIAudit icon to launch.
 ### Track & Complete
 1. Tap **▶** to start timer
 2. Tap **⏱** to complete when done
-3. Select completion method (Manual, Claude, etc.)
+3. **Forgot to start?** Actual time prefills with estimate — adjust with +/- buttons
 
 ### Reschedule Events
 1. Tap an **incomplete event**

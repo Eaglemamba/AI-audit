@@ -2888,7 +2888,7 @@ body {
             </div>
             <div class="event-stat">
                 <div class="event-stat-value" id="eventElapsed">45m</div>
-                <div class="event-stat-label">Elapsed</div>
+                <div class="event-stat-label">Actual</div>
             </div>
             <div class="event-stat">
                 <div class="event-stat-value" id="eventDiff">-15m</div>
@@ -3225,6 +3225,7 @@ let completedHistory = []; // For stats
 let currentDate = new Date();
 let selectedTaskId = null;
 let selectedEventId = null;
+let manualElapsedTime = 0; // Track manually adjusted elapsed time
 let selectedCat = 'work';
 let selectedDur = 60;
 let selectedTime = null;
@@ -4856,12 +4857,16 @@ function openEventDetail(eventId) {
         timerBtn.style.display = 'block';
         moveBtn.style.display = 'none'; // Hide move while timer running
     } else {
-        elapsed = 0;
+        // No timer started - prefill with estimated time
+        elapsed = event.estimatedDuration;
         timerBtn.innerHTML = '▶ Start';
         timerBtn.classList.remove('running');
         timerBtn.style.display = 'block';
         moveBtn.style.display = 'block'; // Show move for incomplete events
     }
+    
+    // Store for manual adjustment
+    manualElapsedTime = elapsed;
     
     const diff = elapsed - event.estimatedDuration;
     
@@ -5089,17 +5094,13 @@ function adjustEventTime(delta) {
     const event = events.find(e => e.id === selectedEventId);
     if (!event || event.completed) return;
     
-    event.end = Math.max(event.start + 15, event.end + delta);
-    saveData();
-    renderTimeGrid();
+    // Adjust manual elapsed time (min 5 minutes)
+    manualElapsedTime = Math.max(5, manualElapsedTime + delta);
     
     // Update display
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    const elapsed = Math.min(nowMins - event.start, event.end - event.start);
-    const diff = elapsed - event.estimatedDuration;
+    const diff = manualElapsedTime - event.estimatedDuration;
     
-    document.getElementById('eventElapsed').textContent = formatDuration(elapsed);
+    document.getElementById('eventElapsed').textContent = formatDuration(manualElapsedTime);
     const diffEl = document.getElementById('eventDiff');
     diffEl.textContent = (diff >= 0 ? '+' : '') + formatDuration(Math.abs(diff));
     diffEl.className = 'event-stat-value ' + (diff < 0 ? 'positive' : (diff > 0 ? 'negative' : ''));
@@ -5121,19 +5122,14 @@ function completeEvent() {
     
     const now = new Date();
     
-    // Calculate actual duration - prefer timer if used
+    // Calculate actual duration - prefer timer if used, otherwise use manual adjustment
     let actual;
     if (event.startedAt) {
         const startTime = new Date(event.startedAt);
         actual = Math.round((now - startTime) / 60000);
     } else {
-        // Fallback to schedule-based calculation
-        const nowMins = now.getHours() * 60 + now.getMinutes();
-        if (event.date === formatDateKey(now) && nowMins > event.start) {
-            actual = Math.min(nowMins - event.start, event.end - event.start);
-        } else {
-            actual = event.end - event.start;
-        }
+        // Use manually adjusted time (prefilled with estimated)
+        actual = manualElapsedTime;
     }
     
     event.completed = true;
@@ -5895,7 +5891,7 @@ const onboardingSteps = [
                 </div>
             </div>
             <div style="margin-top:12px;font-size:13px;color:var(--text2);">
-                Select how you completed: Manual, Claude, ChatGPT, etc.
+                Forgot to start? No problem — adjust time with +/- buttons.
             </div>
         `
     },
@@ -6095,7 +6091,7 @@ const HELP_CONTENT = {
                 <div class="help-text">
                     <strong>▶</strong> Start timer<br>
                     <strong>⏱</strong> Complete when done<br>
-                    Select how you completed (Manual, Claude, etc.)
+                    Forgot to start? Actual time prefills with estimate — adjust with +/- buttons
                 </div>
             </div>
             <div class="help-tip">💡 Tap top half of slot = :00, bottom half = :30</div>
@@ -6176,6 +6172,10 @@ const HELP_CONTENT = {
             <div class="faq-item">
                 <div class="faq-q">Q: How do I move a task to a different time?</div>
                 <div class="faq-a">A: Tap the incomplete event → <strong>↻ Reschedule</strong> → Select a new time slot.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Q: I forgot to start the timer. What now?</div>
+                <div class="faq-a">A: No problem! When you complete, the actual time prefills with your estimate. Use <strong>+/-</strong> buttons to adjust if needed.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Q: How do I customize Quick Routines?</div>
