@@ -13,7 +13,7 @@ A mobile-first time tracking PWA that helps you build awareness of how you spend
 - ⏱️ **One-tap Timer** — Start tracking instantly
 - 📊 **Time Distribution** — See where your time goes
 - 🔁 **Quick Routines** — Customizable templates for recurring tasks
-- 📅 **Calendar View** — Visual daily timeline
+- 📅 **Day & Week View** — Visual daily timeline + 7-day planning grid
 - 🔔 **Daily Reminders** — Morning & evening notifications (iOS 16.4+)
 - 📝 **Tap Empty Slot** — Past = backfill, Future = plan new task
 - ↻ **Reschedule** — Move events to different time slots
@@ -55,6 +55,12 @@ Tap the AIAudit icon to launch.
 
 **Past slots** → Backfill (record what you did)
 **Future slots** → Plan (create task + schedule)
+
+### Week View
+1. In **Today** tab, tap **[Week]** toggle
+2. See 7 days at a glance (Mon-Sun)
+3. Tap any cell → Opens that day + time for scheduling
+4. Use **< >** to navigate weeks
 
 ### Track & Complete
 1. Tap **▶** to start timer

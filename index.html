@@ -803,6 +803,28 @@ body {
     align-items: center;
     gap: 8px;
 }
+.view-toggle {
+    display: flex;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+}
+.view-toggle-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text2);
+    font-weight: 500;
+}
+.view-toggle-btn.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
 .today-import-btn {
     font-size: 16px;
     background: rgba(0,122,255,0.1);
@@ -827,6 +849,103 @@ body {
     overflow: visible;
     position: relative;
 }
+
+/* Week Grid */
+.week-grid {
+    background: var(--card);
+    border-radius: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.week-header {
+    display: grid;
+    grid-template-columns: 45px repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 5;
+}
+.week-header-cell {
+    text-align: center;
+    padding: 8px 2px;
+    font-size: 11px;
+    color: var(--text2);
+}
+.week-header-cell.today {
+    color: var(--accent);
+    font-weight: 600;
+}
+.week-header-day {
+    font-weight: 500;
+}
+.week-header-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2px;
+}
+.week-header-cell.today .week-header-date {
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.week-body {
+    display: grid;
+    grid-template-columns: 45px repeat(7, 1fr);
+}
+.week-time-label {
+    font-size: 10px;
+    color: var(--text2);
+    text-align: right;
+    padding-right: 6px;
+    padding-top: 2px;
+    height: 30px;
+    border-right: 1px solid var(--border);
+}
+.week-cell {
+    height: 30px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+}
+.week-cell:hover {
+    background: rgba(0,122,255,0.05);
+}
+.week-cell:last-child {
+    border-right: none;
+}
+.week-event {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    background: var(--accent);
+    color: white;
+    font-size: 9px;
+    padding: 2px 3px;
+    border-radius: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    z-index: 2;
+}
+.week-event.completed {
+    background: var(--success);
+    opacity: 0.7;
+}
+.week-event.cat-work { background: #007aff; }
+.week-event.cat-meeting { background: #5856d6; }
+.week-event.cat-ai { background: #af52de; }
+.week-event.cat-personal { background: #34c759; }
+.week-event.cat-health { background: #ff3b30; }
+
 .time-slot {
     display: flex;
     min-height: 60px;
@@ -2490,16 +2609,21 @@ body {
         <div class="tab-content" id="tabToday">
             <div class="today-header">
                 <div class="today-nav">
-                    <button class="today-nav-btn" onclick="navDay(-1)">‹</button>
+                    <button class="today-nav-btn" onclick="navPrev()">‹</button>
                     <div class="today-date" id="todayDate">Today, Feb 7</div>
-                    <button class="today-nav-btn" onclick="navDay(1)">›</button>
+                    <button class="today-nav-btn" onclick="navNext()">›</button>
                 </div>
                 <div class="today-actions">
+                    <div class="view-toggle">
+                        <button class="view-toggle-btn active" id="viewDayBtn" onclick="setView('day')">Day</button>
+                        <button class="view-toggle-btn" id="viewWeekBtn" onclick="setView('week')">Week</button>
+                    </div>
                     <button class="today-import-btn" onclick="document.getElementById('icsInput').click()" title="Import .ics">📅+</button>
                     <button class="today-now-btn" onclick="navToday()">Today</button>
                 </div>
             </div>
             <div class="time-grid" id="timeGrid"></div>
+            <div class="week-grid" id="weekGrid" style="display:none;"></div>
         </div>
 
         <!-- Stats Tab -->
@@ -2754,6 +2878,13 @@ body {
                     <span class="due-shortcut" onclick="setDueShortcut('none')">No Date</span>
                 </div>
             </div>
+        </div>
+
+        <div class="form-group" id="startTimeGroup" style="display:none;">
+            <label class="form-label">Start Time <span class="form-label-hint">(optional - auto-schedules)</span></label>
+            <select class="form-input" id="startTimeInput" style="font-size:16px;">
+                <option value="">No specific time</option>
+            </select>
         </div>
 
         <div class="form-group">
@@ -3210,6 +3341,17 @@ body {
 // ══════════════════════════════════════
 // DATA & STATE
 // ══════════════════════════════════════
+
+// Helper function (needed for variable init)
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
 const CATS = [
     { id: 'work', label: 'Work', color: '#007aff' },
     { id: 'meeting', label: 'Meeting', color: '#8e8e93' },
@@ -3223,6 +3365,8 @@ let events = [];
 let completedHistory = []; // For stats
 
 let currentDate = new Date();
+let currentView = 'day'; // 'day' or 'week'
+let currentWeekStart = getWeekStart(new Date());
 let selectedTaskId = null;
 let selectedEventId = null;
 let manualElapsedTime = 0; // Track manually adjusted elapsed time
@@ -3597,6 +3741,10 @@ function openAddTask() {
         o.classList.toggle('selected', o.dataset.priority === 'medium');
     });
     document.getElementById('dueDateInput').value = '';
+    
+    // Reset start time picker
+    document.getElementById('startTimeGroup').style.display = 'none';
+    document.getElementById('startTimeInput').value = '';
     
     // Reset routine UI
     document.querySelector('.routine-toggle').classList.remove('active');
@@ -4039,6 +4187,29 @@ function selectPriority(priority) {
 
 function selectDueDate(dateStr) {
     selectedDueDate = dateStr || null;
+    updateStartTimePicker();
+}
+
+function updateStartTimePicker() {
+    const group = document.getElementById('startTimeGroup');
+    const select = document.getElementById('startTimeInput');
+    
+    if (!selectedDueDate) {
+        group.style.display = 'none';
+        select.value = '';
+        return;
+    }
+    
+    // Populate time options
+    select.innerHTML = '<option value="">No specific time</option>';
+    for (let mins = WORK_START * 60; mins < WORK_END * 60; mins += 30) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        const label = `${h}:${m.toString().padStart(2, '0')}`;
+        select.innerHTML += `<option value="${mins}">${label}</option>`;
+    }
+    
+    group.style.display = 'block';
 }
 
 function setDueShortcut(shortcut) {
@@ -4067,6 +4238,8 @@ function setDueShortcut(shortcut) {
         document.getElementById('dueDateInput').value = '';
         selectedDueDate = null;
     }
+    
+    updateStartTimePicker();
 }
 
 function toggleRoutine() {
@@ -4114,6 +4287,9 @@ function confirmAddTask() {
         return;
     }
     
+    const startTimeValue = document.getElementById('startTimeInput').value;
+    const selectedStartTime = startTimeValue ? parseInt(startTimeValue) : null;
+    
     const task = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2),
         name,
@@ -4127,8 +4303,33 @@ function confirmAddTask() {
     
     tasks.push(task);
     
+    // If start time is set, auto-schedule
+    if (selectedStartTime !== null && selectedDueDate) {
+        const endTime = selectedStartTime + selectedDur;
+        
+        // Check for overlap
+        if (hasEventOverlap(selectedStartTime, endTime, selectedDueDate, null)) {
+            showToast('Time slot has conflict - task added but not scheduled');
+        } else {
+            // Create the event
+            const event = {
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+                taskId: task.id,
+                name: task.name,
+                category: task.category,
+                date: selectedDueDate,
+                start: selectedStartTime,
+                end: endTime,
+                estimatedDuration: task.duration,
+                completed: false,
+                fromRoutine: false
+            };
+            events.push(event);
+            task.scheduled = true;
+        }
+    }
     // If routine is set, auto-schedule for today if applicable
-    if (selectedRoutine) {
+    else if (selectedRoutine) {
         autoScheduleRoutineTask(task);
     }
     
@@ -4136,7 +4337,14 @@ function confirmAddTask() {
     renderTasks();
     renderTimeGrid();
     closeAddTask();
-    showToast(selectedRoutine ? 'Routine task added!' : 'Task added!');
+    
+    if (selectedStartTime !== null && selectedDueDate && task.scheduled) {
+        showToast('Task added and scheduled!');
+    } else if (selectedRoutine) {
+        showToast('Routine task added!');
+    } else {
+        showToast('Task added!');
+    }
 }
 
 function autoScheduleRoutineTask(task) {
@@ -4610,18 +4818,180 @@ function deleteTask() {
 // ══════════════════════════════════════
 // TODAY TAB (Calendar)
 // ══════════════════════════════════════
-function navDay(delta) {
-    currentDate.setDate(currentDate.getDate() + delta);
-    document.getElementById('todayDate').textContent = formatDateDisplay(currentDate);
-    document.getElementById('headerSubtitle').textContent = formatDateDisplay(currentDate);
-    renderTimeGrid();
+
+function navPrev() {
+    if (currentView === 'day') {
+        currentDate.setDate(currentDate.getDate() - 1);
+        updateDateDisplay();
+        renderTimeGrid();
+    } else {
+        currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+        updateWeekDisplay();
+        renderWeekGrid();
+    }
+}
+
+function navNext() {
+    if (currentView === 'day') {
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDateDisplay();
+        renderTimeGrid();
+    } else {
+        currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+        updateWeekDisplay();
+        renderWeekGrid();
+    }
 }
 
 function navToday() {
-    currentDate = new Date();
+    if (currentView === 'day') {
+        currentDate = new Date();
+        updateDateDisplay();
+        renderTimeGrid();
+    } else {
+        currentWeekStart = getWeekStart(new Date());
+        updateWeekDisplay();
+        renderWeekGrid();
+    }
+}
+
+function updateDateDisplay() {
     document.getElementById('todayDate').textContent = formatDateDisplay(currentDate);
     document.getElementById('headerSubtitle').textContent = formatDateDisplay(currentDate);
-    renderTimeGrid();
+}
+
+function updateWeekDisplay() {
+    const weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const startMonth = currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const label = `${startMonth} - ${endMonth}`;
+    document.getElementById('todayDate').textContent = label;
+    document.getElementById('headerSubtitle').textContent = label;
+}
+
+function setView(view) {
+    currentView = view;
+    
+    document.getElementById('viewDayBtn').classList.toggle('active', view === 'day');
+    document.getElementById('viewWeekBtn').classList.toggle('active', view === 'week');
+    
+    if (view === 'day') {
+        document.getElementById('timeGrid').style.display = 'block';
+        document.getElementById('weekGrid').style.display = 'none';
+        updateDateDisplay();
+        renderTimeGrid();
+    } else {
+        document.getElementById('timeGrid').style.display = 'none';
+        document.getElementById('weekGrid').style.display = 'block';
+        // Sync week to include current day
+        currentWeekStart = getWeekStart(currentDate);
+        updateWeekDisplay();
+        renderWeekGrid();
+    }
+}
+
+function renderWeekGrid() {
+    const container = document.getElementById('weekGrid');
+    const today = formatDateKey(new Date());
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Build header
+    let html = '<div class="week-header">';
+    html += '<div class="week-header-cell"></div>'; // Time column
+    
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(currentWeekStart);
+        d.setDate(d.getDate() + i);
+        const dateKey = formatDateKey(d);
+        const isToday = dateKey === today;
+        html += `<div class="week-header-cell${isToday ? ' today' : ''}">
+            <div class="week-header-day">${days[i]}</div>
+            <div class="week-header-date">${d.getDate()}</div>
+        </div>`;
+    }
+    html += '</div>';
+    
+    // Build body
+    html += '<div class="week-body">';
+    
+    for (let mins = WORK_START * 60; mins < WORK_END * 60; mins += 30) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        const timeLabel = m === 0 ? `${h}:00` : '';
+        
+        html += `<div class="week-time-label">${timeLabel}</div>`;
+        
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(currentWeekStart);
+            d.setDate(d.getDate() + i);
+            const dateKey = formatDateKey(d);
+            
+            html += `<div class="week-cell" onclick="handleWeekCellClick('${dateKey}', ${mins})"></div>`;
+        }
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Render events
+    renderWeekEvents();
+}
+
+function renderWeekEvents() {
+    const container = document.getElementById('weekGrid');
+    const cells = container.querySelectorAll('.week-cell');
+    
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(currentWeekStart);
+        d.setDate(d.getDate() + i);
+        const dateKey = formatDateKey(d);
+        const dayEvents = events.filter(e => e.date === dateKey);
+        
+        dayEvents.forEach(event => {
+            // Calculate position
+            const startSlot = Math.floor((event.start - WORK_START * 60) / 30);
+            const endSlot = Math.ceil((event.end - WORK_START * 60) / 30);
+            const duration = endSlot - startSlot;
+            
+            if (startSlot < 0 || startSlot >= (WORK_END - WORK_START) * 2) return;
+            
+            // Find the cell
+            const cellIndex = startSlot * 7 + i;
+            const cell = cells[cellIndex];
+            if (!cell) return;
+            
+            const height = duration * 30 - 2;
+            const catClass = `cat-${event.category || 'work'}`;
+            const completedClass = event.completed ? ' completed' : '';
+            
+            const eventEl = document.createElement('div');
+            eventEl.className = `week-event ${catClass}${completedClass}`;
+            eventEl.style.top = '1px';
+            eventEl.style.height = `${height}px`;
+            eventEl.textContent = event.name;
+            eventEl.onclick = (e) => {
+                e.stopPropagation();
+                openEventDetail(event.id);
+            };
+            
+            cell.appendChild(eventEl);
+        });
+    }
+}
+
+function handleWeekCellClick(dateKey, startMins) {
+    // Switch to day view for that date and open backfill
+    const [year, month, day] = dateKey.split('-').map(Number);
+    currentDate = new Date(year, month - 1, day);
+    setView('day');
+    
+    // Open backfill modal for that time
+    setTimeout(() => {
+        backfillDate = dateKey;
+        backfillTime = startMins;
+        openBackfillModal(startMins, dateKey);
+    }, 100);
 }
 
 function renderTimeGrid() {
@@ -6111,8 +6481,16 @@ const HELP_CONTENT = {
                 <div class="help-section-title">📅 Today Tab</div>
                 <div class="help-text">
                     Visual calendar showing scheduled tasks.<br>
-                    Navigate between days with ‹ › buttons.<br>
-                    Red line shows current time.
+                    Toggle between <strong>[Day]</strong> and <strong>[Week]</strong> views.<br>
+                    Navigate with ‹ › buttons. Red line shows current time.
+                </div>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">📆 Week View</div>
+                <div class="help-text">
+                    Tap <strong>[Week]</strong> to see 7 days at a glance.<br>
+                    Tap any cell → Opens that day + time for scheduling.<br>
+                    Great for planning ahead.
                 </div>
             </div>
             <div class="help-section">
