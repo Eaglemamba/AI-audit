@@ -977,11 +977,8 @@ body {
 .time-slot:first-child .time-content {
     border-top: none;
 }
-.time-slot.lunch .time-content {
+.week-cell.lunch {
     background: rgba(0,0,0,0.03);
-}
-.time-slot.lunch .time-label {
-    color: var(--text2);
 }
 .time-slot.past-slot .time-content {
     cursor: pointer;
@@ -1138,6 +1135,25 @@ body {
     height: 8px;
     background: var(--danger);
     border-radius: 50%;
+}
+
+/* Lunch Block Overlay */
+.lunch-block {
+    position: absolute;
+    left: 51px;
+    right: 0;
+    background: rgba(0,0,0,0.04);
+    z-index: 1;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 4px 8px;
+}
+.lunch-label {
+    font-size: 11px;
+    color: var(--text2);
+    opacity: 0.8;
 }
 
 /* Drop Zone Hint */
@@ -2771,6 +2787,11 @@ body {
 
             <div class="more-section">
                 <div class="more-section-title">Settings</div>
+                <div class="more-item" onclick="openLunchTimeSetting()">
+                    <span class="more-icon">🍽️</span>
+                    <span class="more-label">Lunch Time</span>
+                    <span class="more-value" id="lunchTimeLabel">12:30 - 13:30</span>
+                </div>
                 <div class="more-item" onclick="clearAllData()">
                     <span class="more-icon">🗑️</span>
                     <span class="more-label" style="color:var(--danger)">Clear All Data</span>
@@ -2965,6 +2986,41 @@ body {
             <span class="sheet-title-edit" onclick="editTaskName()">✏️</span>
         </div>
         <input type="text" class="sheet-title-input" id="taskNameEditInput" style="display:none" onblur="saveTaskName()" onkeydown="if(event.key==='Enter')saveTaskName()">
+        
+        <!-- Category & Priority Edit -->
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <div class="cat-picker" id="taskDetailCatPicker">
+                <div class="cat-option" data-cat="work" onclick="updateTaskCategory('work')"><span class="cat-dot" style="background:#007aff"></span>Work</div>
+                <div class="cat-option" data-cat="meeting" onclick="updateTaskCategory('meeting')"><span class="cat-dot" style="background:#8e8e93"></span>Meeting</div>
+                <div class="cat-option" data-cat="ai" onclick="updateTaskCategory('ai')"><span class="cat-dot" style="background:#ff9500"></span>AI</div>
+                <div class="cat-option" data-cat="personal" onclick="updateTaskCategory('personal')"><span class="cat-dot" style="background:#34c759"></span>Personal</div>
+                <div class="cat-option" data-cat="health" onclick="updateTaskCategory('health')"><span class="cat-dot" style="background:#ff6b6b"></span>Health</div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Priority</label>
+            <div class="priority-picker" id="taskDetailPriorityPicker">
+                <div class="priority-option" data-priority="high" onclick="updateTaskPriority('high')"><span class="priority-dot high"></span>High</div>
+                <div class="priority-option" data-priority="medium" onclick="updateTaskPriority('medium')"><span class="priority-dot medium"></span>Medium</div>
+                <div class="priority-option" data-priority="low" onclick="updateTaskPriority('low')"><span class="priority-dot low"></span>Low</div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Duration</label>
+            <div class="dur-picker" id="taskDetailDurPicker">
+                <div class="dur-option" data-dur="15" onclick="updateTaskDuration(15)">15m</div>
+                <div class="dur-option" data-dur="30" onclick="updateTaskDuration(30)">30m</div>
+                <div class="dur-option" data-dur="45" onclick="updateTaskDuration(45)">45m</div>
+                <div class="dur-option" data-dur="60" onclick="updateTaskDuration(60)">1h</div>
+                <div class="dur-option" data-dur="90" onclick="updateTaskDuration(90)">1.5h</div>
+                <div class="dur-option" data-dur="120" onclick="updateTaskDuration(120)">2h</div>
+                <div class="dur-option" data-dur="180" onclick="updateTaskDuration(180)">3h</div>
+                <div class="dur-option" data-dur="240" onclick="updateTaskDuration(240)">4h</div>
+            </div>
+        </div>
         
         <!-- Subtasks Section -->
         <div class="form-group" id="subtasksSection">
@@ -3311,6 +3367,37 @@ body {
     </div>
 </div>
 
+<!-- Lunch Time Modal -->
+<div class="help-overlay" id="lunchTimeOverlay" onclick="closeLunchTimeSetting()"></div>
+<div class="help-modal" id="lunchTimeModal" style="max-width:300px;">
+    <div class="help-header">
+        <div class="help-title">Lunch Time</div>
+        <button class="help-close" onclick="closeLunchTimeSetting()">×</button>
+    </div>
+    <div class="help-body">
+        <div class="form-group">
+            <label class="form-label">Start</label>
+            <select class="form-input" id="lunchStartInput" style="font-size:16px;">
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">End</label>
+            <select class="form-input" id="lunchEndInput" style="font-size:16px;">
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" id="lunchEnabledInput" style="width:18px;height:18px;">
+                Show on calendar
+            </label>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-btn primary" onclick="saveLunchTimeSetting()">Save</button>
+            <button class="confirm-btn cancel" onclick="closeLunchTimeSetting()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <div class="help-overlay" id="aiAnalysisOverlay" onclick="closeAIAnalysis()"></div>
 <div class="help-modal" id="aiAnalysisModal" style="max-width:500px;">
     <div class="help-header">
@@ -3383,6 +3470,13 @@ let expandedTasks = new Set(); // Track which tasks have subtasks expanded
 const WORK_START = 5;
 const WORK_END = 23;
 
+// Lunch time settings
+let lunchSettings = {
+    enabled: true,
+    start: 750,  // 12:30 in minutes
+    end: 810    // 13:30 in minutes
+};
+
 // ══════════════════════════════════════
 // STORAGE
 // ══════════════════════════════════════
@@ -3391,6 +3485,12 @@ function loadData() {
         tasks = JSON.parse(localStorage.getItem('em_tasks')) || [];
         events = JSON.parse(localStorage.getItem('em_events')) || [];
         completedHistory = JSON.parse(localStorage.getItem('em_history')) || [];
+        
+        // Load lunch settings
+        const savedLunch = localStorage.getItem('em_lunch_settings');
+        if (savedLunch) {
+            lunchSettings = JSON.parse(savedLunch);
+        }
     } catch(e) {
         console.log('Error loading data:', e);
     }
@@ -4423,6 +4523,21 @@ function openTaskDetail(taskId) {
     
     document.getElementById('taskDetailTitle').textContent = task.name;
     
+    // Set current category
+    document.querySelectorAll('#taskDetailCatPicker .cat-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.cat === task.category);
+    });
+    
+    // Set current priority
+    document.querySelectorAll('#taskDetailPriorityPicker .priority-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.priority === (task.priority || 'medium'));
+    });
+    
+    // Set current duration
+    document.querySelectorAll('#taskDetailDurPicker .dur-option').forEach(o => {
+        o.classList.toggle('selected', parseInt(o.dataset.dur) === task.duration);
+    });
+    
     // Initialize subtasks array if not exists
     if (!task.subtasks) task.subtasks = [];
     
@@ -4685,6 +4800,51 @@ function closeEditSubtask() {
     editingSubtaskIdx = null;
 }
 
+function updateTaskCategory(category) {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    task.category = category;
+    
+    // Update UI
+    document.querySelectorAll('#taskDetailCatPicker .cat-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.cat === category);
+    });
+    
+    saveData();
+    renderTasks();
+}
+
+function updateTaskPriority(priority) {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    task.priority = priority;
+    
+    // Update UI
+    document.querySelectorAll('#taskDetailPriorityPicker .priority-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.priority === priority);
+    });
+    
+    saveData();
+    renderTasks();
+}
+
+function updateTaskDuration(duration) {
+    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!task) return;
+    
+    task.duration = duration;
+    
+    // Update UI
+    document.querySelectorAll('#taskDetailDurPicker .dur-option').forEach(o => {
+        o.classList.toggle('selected', parseInt(o.dataset.dur) === duration);
+    });
+    
+    saveData();
+    renderTasks();
+}
+
 function closeTaskDetail() {
     document.getElementById('taskDetailOverlay').classList.remove('show');
     document.getElementById('taskDetailSheet').classList.remove('show');
@@ -4920,6 +5080,10 @@ function renderWeekGrid() {
         const m = mins % 60;
         const timeLabel = m === 0 ? `${h}:00` : '';
         
+        // Check if this slot is in lunch time
+        const isLunch = lunchSettings.enabled && 
+            mins < lunchSettings.end && (mins + 30) > lunchSettings.start;
+        
         html += `<div class="week-time-label">${timeLabel}</div>`;
         
         for (let i = 0; i < 7; i++) {
@@ -4927,7 +5091,7 @@ function renderWeekGrid() {
             d.setDate(d.getDate() + i);
             const dateKey = formatDateKey(d);
             
-            html += `<div class="week-cell" onclick="handleWeekCellClick('${dateKey}', ${mins})"></div>`;
+            html += `<div class="week-cell${isLunch ? ' lunch' : ''}" onclick="handleWeekCellClick('${dateKey}', ${mins})"></div>`;
         }
     }
     
@@ -5024,11 +5188,10 @@ function renderTimeGrid() {
     
     for (let h = WORK_START; h < gridEnd; h++) {
         const slotStart = h * 60;
-        const isLunch = h === 12;
         const isPast = isToday && (h + 1) * 60 <= nowMins;
         html += `
-            <div class="time-slot${isLunch ? ' lunch' : ''}${isPast ? ' past-slot' : ''}" data-hour="${h}">
-                <div class="time-label">${h === 0 ? '12' : (h > 12 ? h-12 : h)} ${h >= 12 ? 'PM' : 'AM'}${isLunch ? ' 🍽' : ''}</div>
+            <div class="time-slot${isPast ? ' past-slot' : ''}" data-hour="${h}">
+                <div class="time-label">${h === 0 ? '12' : (h > 12 ? h-12 : h)} ${h >= 12 ? 'PM' : 'AM'}</div>
                 <div class="time-content" data-start="${slotStart}" onclick="handleSlotClick(event, ${slotStart}, '${dateKey}')">
         `;
         
@@ -5116,6 +5279,15 @@ function renderTimeGrid() {
     if (isToday && nowMins >= WORK_START * 60 && nowMins < gridEnd * 60) {
         const topPos = ((nowMins - WORK_START * 60) / 60) * 60;
         html += `<div class="now-line" style="top:${topPos}px;"></div>`;
+    }
+    
+    // Lunch block overlay
+    if (lunchSettings.enabled && lunchSettings.start >= WORK_START * 60 && lunchSettings.start < gridEnd * 60) {
+        const lunchTop = ((lunchSettings.start - WORK_START * 60) / 60) * 60;
+        const lunchHeight = ((lunchSettings.end - lunchSettings.start) / 60) * 60;
+        html += `<div class="lunch-block" style="top:${lunchTop}px; height:${lunchHeight}px;">
+            <span class="lunch-label">🍽️ Lunch</span>
+        </div>`;
     }
     
     container.innerHTML = html;
@@ -6351,6 +6523,7 @@ function init() {
     loadData();
     loadQuickRoutines(); // Load custom quick routines
     loadNotificationSettings(); // Load notification settings
+    updateLunchTimeLabel(); // Update lunch time display
     processAllRoutineTasks(); // Auto-schedule routine tasks for today
     renderTasks();
     renderTimeGrid();
@@ -7101,6 +7274,68 @@ function saveReminderTime() {
     scheduleNotifications();
     closeReminderTime();
     showToast('Reminder time updated');
+}
+
+// Lunch Time Setting
+function openLunchTimeSetting() {
+    // Populate time options (30-min intervals)
+    const startSelect = document.getElementById('lunchStartInput');
+    const endSelect = document.getElementById('lunchEndInput');
+    
+    startSelect.innerHTML = '';
+    endSelect.innerHTML = '';
+    
+    for (let mins = WORK_START * 60; mins < WORK_END * 60; mins += 30) {
+        const label = formatTime(mins);
+        startSelect.innerHTML += `<option value="${mins}">${label}</option>`;
+        endSelect.innerHTML += `<option value="${mins}">${label}</option>`;
+    }
+    
+    // Set current values
+    startSelect.value = lunchSettings.start;
+    endSelect.value = lunchSettings.end;
+    document.getElementById('lunchEnabledInput').checked = lunchSettings.enabled;
+    
+    document.getElementById('lunchTimeOverlay').classList.add('show');
+    document.getElementById('lunchTimeModal').classList.add('show');
+}
+
+function closeLunchTimeSetting() {
+    document.getElementById('lunchTimeOverlay').classList.remove('show');
+    document.getElementById('lunchTimeModal').classList.remove('show');
+}
+
+function saveLunchTimeSetting() {
+    const start = parseInt(document.getElementById('lunchStartInput').value);
+    const end = parseInt(document.getElementById('lunchEndInput').value);
+    const enabled = document.getElementById('lunchEnabledInput').checked;
+    
+    if (end <= start) {
+        showToast('End time must be after start time');
+        return;
+    }
+    
+    lunchSettings = { enabled, start, end };
+    localStorage.setItem('em_lunch_settings', JSON.stringify(lunchSettings));
+    
+    // Update label
+    updateLunchTimeLabel();
+    
+    // Re-render grids
+    renderTimeGrid();
+    if (currentView === 'week') {
+        renderWeekGrid();
+    }
+    
+    closeLunchTimeSetting();
+    showToast('Lunch time updated');
+}
+
+function updateLunchTimeLabel() {
+    const label = lunchSettings.enabled 
+        ? `${formatTime(lunchSettings.start)} - ${formatTime(lunchSettings.end)}`
+        : 'Off';
+    document.getElementById('lunchTimeLabel').textContent = label;
 }
 
 function scheduleNotifications() {

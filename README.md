@@ -16,6 +16,8 @@ A mobile-first time tracking PWA that helps you build awareness of how you spend
 - 📅 **Day & Week View** — Visual daily timeline + 7-day planning grid
 - 🔔 **Daily Reminders** — Morning & evening notifications (iOS 16.4+)
 - 📝 **Tap Empty Slot** — Past = backfill, Future = plan new task
+- ✏️ **Edit Tasks** — Change category, priority, duration anytime
+- 🍽️ **Lunch Time** — Visual block on calendar (customizable)
 - ↻ **Reschedule** — Move events to different time slots
 - 💾 **Offline Support** — Works without internet
 - 📤 **Export/Import** — Backup your data anytime
@@ -76,6 +78,22 @@ Tap the AIAudit icon to launch.
 1. Tap **+** to open Add Task
 2. **Long-press** any Quick Routine button
 3. Edit icon, name, category, duration
+
+### Edit Existing Tasks
+1. Tap any task in **Tasks** tab
+2. Change **Category**, **Priority**, or **Duration**
+3. Changes save automatically
+
+### Schedule with Start Time
+1. When creating a task, select a **Due Date**
+2. **Start Time** picker appears
+3. Select time → Task auto-schedules when created
+
+### Set Lunch Time
+1. Go to **More** → **Settings** → **Lunch Time**
+2. Set start and end time (30-min intervals)
+3. Toggle **Show on calendar**
+4. Lunch block appears as gray overlay on Day View
 
 ---
 
@@ -169,4 +187,4 @@ MIT License - Free to use and modify.
 
 ## Version
 
-**v1.4** | February 2026
+**v1.5** | February 2026
